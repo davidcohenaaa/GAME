@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>כלל BEHAVE – עובדים מהבית</title>
+<style>
+  @font-face{font-family:'Heebo';font-weight:100 900;src:url(fonts/heebo-hebrew.woff2) format('woff2');unicode-range:U+0307-0308,U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+  @font-face{font-family:'Heebo';font-weight:100 900;src:url(fonts/heebo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  /* פלטת כלל ביטוח ופיננסים (קירוב) – ניתן לעדכן כאן */
+  :root{
+    --navy:#00205b;
+    --blue:#0047bb;
+    --sky:#00a3e0;
+    --light:#e8f3fc;
+    --white:#ffffff;
+    --accent:#7fd3f5;
+    --D:31s; /* משך כולל */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:var(--navy);font-family:'Heebo',sans-serif;color:var(--white)}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;
+    background:radial-gradient(circle at 80% 20%, #0a3a8c 0%, var(--navy) 55%, #001336 100%)}
+  .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0}
+  .anim{animation-fill-mode:both;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+
+  /* רקע: עיגולים צפים */
+  .bubble{position:absolute;border-radius:50%;background:var(--sky);opacity:.08;animation:float var(--D) linear both}
+  @keyframes float{from{transform:translateY(0) scale(1)}to{transform:translateY(-260px) scale(1.25)}}
+
+  /* לוגו פינתי */
+  #brand{position:absolute;top:56px;right:72px;font-weight:900;font-size:44px;letter-spacing:.5px;display:flex;align-items:center;gap:14px;
+    animation:fadeIn .8s .2s both}
+  #brand .dot{width:18px;height:18px;border-radius:50%;background:var(--sky)}
+  #brand small{font-weight:500;font-size:22px;opacity:.75}
+
+  /* פס התקדמות */
+  #progress{position:absolute;bottom:0;right:0;height:8px;background:linear-gradient(270deg,var(--sky),var(--blue));animation:prog var(--D) linear both}
+  @keyframes prog{from{width:0}to{width:100%}}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes up{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:none}}
+  @keyframes pop{0%{opacity:0;transform:scale(.4)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+  @keyframes slideR{from{opacity:0;transform:translateX(-120px)}to{opacity:1;transform:none}}
+  @keyframes slideL{from{opacity:0;transform:translateX(120px)}to{opacity:1;transform:none}}
+  @keyframes draw{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+
+  /* חלון סצנה: הופעה + היעלמות */
+  @keyframes s1{0%,1%{opacity:0}3%,12%{opacity:1}14%,100%{opacity:0}}
+  @keyframes s2{0%,13%{opacity:0}15%,29%{opacity:1}31%,100%{opacity:0}}
+  @keyframes s3{0%,30%{opacity:0}32%,42%{opacity:1}44%,100%{opacity:0}}
+  @keyframes s4{0%,43%{opacity:0}45%,76%{opacity:1}78%,100%{opacity:0}}
+  @keyframes s5{0%,77%{opacity:0}79%,100%{opacity:1}}
+  #sc1{animation:s1 var(--D) linear both}
+  #sc2{animation:s2 var(--D) linear both}
+  #sc3{animation:s3 var(--D) linear both}
+  #sc4{animation:s4 var(--D) linear both}
+  #sc5{animation:s5 var(--D) linear both}
+
+  h1{font-weight:900;font-size:120px;line-height:1.05}
+  h2{font-weight:800;font-size:76px;line-height:1.15}
+  p.lead{font-size:44px;font-weight:500;opacity:.9;margin-top:24px}
+  .hl{color:var(--sky)}
+
+  /* סצנה 1 – בית ולפטופ */
+  #sc1 .wrap{display:flex;align-items:center;gap:120px}
+  #sc1 svg{width:620px;height:620px}
+
+  /* סצנה 2 – לוח שבועי */
+  #sc2 .wrap{display:flex;flex-direction:column;align-items:center;gap:56px;text-align:center}
+  .week{display:flex;gap:26px;direction:rtl}
+  .day{width:170px;height:200px;border-radius:28px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.18);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:34px;font-weight:700}
+  .day .ic{font-size:70px;line-height:1}
+  .day.home{background:rgba(0,163,224,.18);border-color:var(--sky)}
+  .day .lbl{font-size:24px;font-weight:500;opacity:.8}
+  .stat{display:flex;gap:40px;align-items:center;font-size:40px;font-weight:600}
+  .gauge{width:540px;height:30px;border-radius:30px;background:rgba(255,255,255,.12);overflow:hidden}
+  .gauge i{display:block;height:100%;width:22%;border-radius:30px;background:linear-gradient(270deg,var(--sky),var(--accent));transform-origin:right;animation:grow 1.2s both}
+  @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+  /* סצנה 3 – מיתוג */
+  #sc3 .wrap{text-align:center}
+  .logo-big{font-weight:900;font-size:210px;letter-spacing:2px;line-height:1}
+  .logo-big .b{color:var(--sky)}
+  .ring{position:absolute;width:900px;height:900px;border-radius:50%;border:3px solid var(--sky);opacity:0}
+  @keyframes ring{0%{opacity:.7;transform:scale(.3)}100%{opacity:0;transform:scale(1.4)}}
+
+  /* סצנה 4 – יתרונות */
+  #sc4 .wrap{width:1640px;padding-top:110px}
+  #sc4 h2{text-align:center;margin-bottom:40px;font-size:68px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:36px}
+  .card{background:var(--white);color:var(--navy);border-radius:34px;padding:40px 40px 36px;min-height:290px;
+    box-shadow:0 30px 60px rgba(0,0,0,.25);position:relative;overflow:hidden}
+  .card::after{content:"";position:absolute;bottom:0;right:0;left:0;height:10px;background:linear-gradient(270deg,var(--sky),var(--blue))}
+  .card .icon{width:92px;height:92px;border-radius:26px;background:var(--light);display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+  .card .icon svg{width:56px;height:56px}
+  .card h3{font-size:40px;font-weight:800;line-height:1.15;margin-bottom:12px;color:var(--blue)}
+  .card p{font-size:27px;line-height:1.35;font-weight:500;color:#23365e}
+
+  /* סצנה 5 – קריאה לפעולה */
+  #sc5 .wrap{text-align:center;display:flex;flex-direction:column;align-items:center}
+  .saving{display:inline-flex;align-items:baseline;gap:18px;background:var(--white);color:var(--navy);padding:26px 60px;border-radius:999px;margin:44px 0 40px;font-size:46px;font-weight:700}
+  .saving b{font-size:92px;font-weight:900;color:var(--blue)}
+  .cta{background:linear-gradient(270deg,var(--sky),var(--blue));padding:30px 80px;border-radius:999px;font-size:52px;font-weight:800;box-shadow:0 20px 50px rgba(0,163,224,.4)}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  .disc{position:absolute;bottom:40px;left:0;right:0;text-align:center;font-size:22px;opacity:.65}
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- רקע -->
+  <div class="bubble" style="width:520px;height:520px;top:640px;left:-120px"></div>
+  <div class="bubble" style="width:300px;height:300px;top:120px;left:420px"></div>
+  <div class="bubble" style="width:760px;height:760px;top:520px;right:-260px"></div>
+  <div class="bubble" style="width:180px;height:180px;top:820px;left:980px"></div>
+
+  <div id="brand"><span class="dot"></span>כלל <span class="hl">BEHAVE</span> <small>| כלל ביטוח ופיננסים</small></div>
+
+  <!-- 1: עובדים מהבית -->
+  <section class="scene" id="sc1">
+    <div class="wrap">
+      <div>
+        <h1 class="anim" style="animation:up .9s .5s both">עובדים<br><span class="hl">מהבית?</span></h1>
+        <p class="lead anim" style="animation:up .9s 1.2s both">היברידי, מרחוק או רק כמה ימים בשבוע</p>
+      </div>
+      <svg viewBox="0 0 400 400" fill="none">
+        <circle cx="200" cy="200" r="190" fill="#0a3a8c" class="anim" style="animation:pop .8s .3s both"/>
+        <!-- בית -->
+        <g stroke="#7fd3f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M70 190 L200 80 L330 190" style="--len:380;stroke-dasharray:380;animation:draw 1s .6s both"/>
+          <path d="M100 170 V320 H300 V170" style="--len:520;stroke-dasharray:520;animation:draw 1s .9s both"/>
+        </g>
+        <!-- לפטופ -->
+        <g class="anim" style="animation:up .7s 1.6s both">
+          <rect x="135" y="200" width="130" height="85" rx="8" fill="#fff"/>
+          <rect x="147" y="212" width="106" height="61" rx="4" fill="#00a3e0"/>
+          <path d="M115 292 H285 L272 306 H128 Z" fill="#e8f3fc"/>
+          <path d="M175 245 l18 14 l32 -30" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" style="--len:80;stroke-dasharray:80;animation:draw .6s 2.2s both"/>
+        </g>
+        <!-- כוס קפה -->
+        <g class="anim" style="animation:pop .6s 2s both">
+          <rect x="280" y="262" width="30" height="34" rx="6" fill="#fff"/>
+          <path d="M310 270 q12 0 12 10 q0 10 -12 10" stroke="#fff" stroke-width="5"/>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 2: הרכב חונה -->
+  <section class="scene" id="sc2">
+    <div class="wrap">
+      <h2 class="anim" style="animation:up .8s 4.7s both">הרכב שלך <span class="hl">חונה</span> רוב השבוע</h2>
+      <div class="week">
+        <div class="day home anim" style="animation:pop .5s 5.3s both"><span class="ic">🏠</span>א׳<span class="lbl">מהבית</span></div>
+        <div class="day anim" style="animation:pop .5s 5.5s both"><span class="ic">🚗</span>ב׳<span class="lbl">למשרד</span></div>
+        <div class="day home anim" style="animation:pop .5s 5.7s both"><span class="ic">🏠</span>ג׳<span class="lbl">מהבית</span></div>
+        <div class="day home anim" style="animation:pop .5s 5.9s both"><span class="ic">🏠</span>ד׳<span class="lbl">מהבית</span></div>
+        <div class="day home anim" style="animation:pop .5s 6.1s both"><span class="ic">🏠</span>ה׳<span class="lbl">מהבית</span></div>
+      </div>
+      <div class="stat anim" style="animation:up .7s 6.8s both">
+        <span>הקילומטרז׳ שלך:</span>
+        <div class="gauge"><i style="animation-delay:7.1s"></i></div>
+        <span class="hl">נמוך</span>
+      </div>
+      <p class="lead anim" style="animation:up .8s 7.6s both;font-size:54px;font-weight:800">אז למה לשלם כמו מי שנוסע <span class="hl">כל יום?</span></p>
+    </div>
+  </section>
+
+  <!-- 3: הכירו את כלל BEHAVE -->
+  <section class="scene" id="sc3">
+    <div class="ring" style="animation:ring 1.6s 9.9s both"></div>
+    <div class="ring" style="animation:ring 1.6s 10.3s both"></div>
+    <div class="wrap">
+      <p class="lead anim" style="animation:up .7s 9.9s both;margin:0 0 10px">הגיע הזמן לשדרג ל־</p>
+      <div class="logo-big anim" style="animation:pop .9s 10.2s both">כלל <span class="b">BEHAVE</span></div>
+      <p class="lead anim" style="animation:up .8s 11s both">ביטוח רכב שמתגמל אותך על <b class="hl">פחות נסיעה</b> ו<b class="hl">נהיגה בטוחה</b></p>
+    </div>
+  </section>
+
+  <!-- 4: יתרונות -->
+  <section class="scene" id="sc4">
+    <div class="wrap">
+      <h2 class="anim" style="animation:up .7s 14s both">למה <span class="hl">כלל BEHAVE</span>?</h2>
+      <div class="grid">
+        <div class="card anim" style="animation:slideL .7s 14.7s both">
+          <div class="icon"><span style="font-size:58px;font-weight:900;color:#0047bb">₪</span></div>
+          <h3>חוסכים בפרמיה</h3>
+          <p>נוסעים פחות ונוהגים בטוח? משלמים פחות – הנחה של עד עשרות אחוזים.</p>
+        </div>
+        <div class="card anim" style="animation:slideL .7s 15.6s both">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0047bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></svg></div>
+          <h3>בלי התקנה ברכב</h3>
+          <p>אין צורך ברכיב פיזי – רק חיבור הסמארטפון לרכב בבלוטות׳.</p>
+        </div>
+        <div class="card anim" style="animation:slideL .7s 16.5s both">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0047bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
+          <h3>ויתור על השתתפות עצמית</h3>
+          <p>לא משנה מי אשם בתאונה (בכפוף לתנאי הפוליסה).</p>
+        </div>
+        <div class="card anim" style="animation:slideL .7s 17.4s both">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0047bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M9 15l2-3 2 2 2-4"/><path d="M11 19h2"/></svg></div>
+          <h3>משוב אחרי כל נסיעה</h3>
+          <p>מפה וציון מפורטים: מהירות, בלימות, פניות חדות ושימוש בטלפון.</p>
+        </div>
+        <div class="card anim" style="animation:slideL .7s 18.3s both">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#0047bb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <h3>ליווי אישי 24/7</h3>
+          <p>במקרה תאונה – תמיכה בזמן אמת, מונית הביתה וגרר מהיר.</p>
+        </div>
+        <div class="card anim" style="animation:slideL .7s 19.2s both;background:linear-gradient(160deg,#00a3e0,#0047bb);color:#fff">
+          <div class="icon" style="background:rgba(255,255,255,.2)"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
+          <h3 style="color:#fff">מושלם למי שעובד מהבית</h3>
+          <p style="color:#e8f3fc">פחות ימים על הכביש = יותר חיסכון בביטוח.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5: קריאה לפעולה -->
+  <section class="scene" id="sc5">
+    <div class="wrap">
+      <h2 class="anim" style="animation:up .8s 24.7s both">עובדים מהבית?<br>תשדרגו ל<span class="hl">כלל BEHAVE</span></h2>
+      <div class="saving anim" style="animation:pop .8s 25.6s both">חיסכון שנתי של עד <b>₪<span id="counter">1,000</span>*</b></div>
+      <div class="anim" style="animation:up .7s 26.8s both">
+        <div class="cta" style="animation:pulse 1.4s 27.6s 3 both">בדקו התאמה עוד היום</div>
+      </div>
+    </div>
+    <div class="disc anim" style="animation:fadeIn .8s 27.2s both">*גובה ההנחה תלוי באיכות הנהיגה ובהיקף הנסועה. בכפוף לתנאי הפוליסה ולחיתום החברה.</div>
+  </section>
+
+  <div id="progress"></div>
+</div>
+
+<script>
+  // מונה החיסכון – מחושב לפי זמן האנימציה כדי שיעבוד גם ברינדור פריים־פריים
+  const counter = document.getElementById('counter');
+  window.__setTime = (t) => {
+    document.getAnimations().forEach(a => { a.pause(); a.currentTime = t * 1000; });
+    const p = Math.min(1, Math.max(0, (t - 25.8) / 1.4));
+    const v = Math.round(1000 * (1 - Math.pow(1 - p, 3)));
+    counter.textContent = v.toLocaleString('en-US');
+  };
+  // תצוגה חיה בדפדפן: לולאה
+  if (!navigator.webdriver) {
+    const start = performance.now();
+    (function tick(){ window.__setTime(((performance.now()-start)/1000) % 31); requestAnimationFrame(tick); })();
+  }
+</script>
+</body>
+</html>
