@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>כלל BEHAVE – Kinetic Typography</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;500;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0b1b3a; --paper:#f4f1ea; --blue:#0047bb; --cyan:#00b6e3; --lime:#c6ff3d; --red:#ff3b3b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#000;overflow:hidden;font-family:'Heebo',sans-serif}
+  #wrap{position:fixed;inset:0;display:grid;place-items:center}
+  #stage{position:relative;flex:none;width:1920px;height:1080px;overflow:hidden;background:var(--ink);transform-origin:center;transition:background .3s}
+  .w{position:absolute;white-space:nowrap;font-weight:900;line-height:1;letter-spacing:-.02em}
+  .w > span{display:inline-block;will-change:transform,opacity}
+  .light{font-weight:300}
+  .mid{font-weight:500}
+  .latin{letter-spacing:.02em}
+  .line{position:absolute;height:14px;will-change:transform}
+  #ui{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:5}
+  #ui button{font:500 16px 'Heebo';padding:8px 18px;border-radius:999px;border:0;background:#fff;color:#000;cursor:pointer}
+  #bar{position:absolute;bottom:0;right:0;height:6px;background:var(--cyan);width:0;z-index:3}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage"><div id="bar"></div></div></div>
+<div id="ui"><button id="play">▶ נגן מחדש</button><button id="pause">❚❚ עצור</button></div>
+
+<script>
+const stage = document.getElementById('stage');
+const bar = document.getElementById('bar');
+const css = getComputedStyle(document.documentElement);
+const col = n => css.getPropertyValue('--' + n).trim();
+
+function fit(){
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* ---------- animation presets (Web Animations API) ---------- */
+const E = { out:'cubic-bezier(.16,1,.3,1)', in:'cubic-bezier(.7,0,.84,0)', back:'cubic-bezier(.34,1.56,.64,1)' };
+const IN = {
+  slam:   [{transform:'scale(3)',opacity:0,filter:'blur(20px)'},{transform:'scale(1)',opacity:1,filter:'blur(0)'}],
+  up:     [{transform:'translateY(140%)',opacity:0},{transform:'translateY(0)',opacity:1}],
+  down:   [{transform:'translateY(-140%)',opacity:0},{transform:'translateY(0)',opacity:1}],
+  right:  [{transform:'translateX(120%)',opacity:0},{transform:'translateX(0)',opacity:1}],
+  left:   [{transform:'translateX(-120%)',opacity:0},{transform:'translateX(0)',opacity:1}],
+  pop:    [{transform:'scale(0) rotate(-12deg)'},{transform:'scale(1) rotate(0)'}],
+  stretch:[{transform:'scaleX(0)'},{transform:'scaleX(1)'}],
+  fade:   [{opacity:0},{opacity:1}],
+};
+const OUT = {
+  up:    [{transform:'translateY(0)',opacity:1},{transform:'translateY(-160%)',opacity:0}],
+  down:  [{transform:'translateY(0)',opacity:1},{transform:'translateY(160%)',opacity:0}],
+  zoom:  [{transform:'scale(1)',opacity:1},{transform:'scale(4)',opacity:0}],
+  shrink:[{transform:'scale(1)',opacity:1},{transform:'scale(0)',opacity:0}],
+  left:  [{transform:'translateX(0)',opacity:1},{transform:'translateX(-250%)',opacity:0}],
+  fade:  [{opacity:1},{opacity:0}],
+};
+
+/* ---------- helpers ---------- */
+let timers = [], live = [], rafs = [];
+const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+
+// o: {text, size, x, y | r (anchor from right edge), color, cls, in, dur, shake, bg}
+function word(o){
+  const el = document.createElement('div');
+  el.className = 'w ' + (o.cls || '');
+  const anchoredRight = o.r != null;
+  Object.assign(el.style, {
+    fontSize: (o.size || 200) + 'px',
+    color: o.color || '#fff',
+    top: (o.y != null ? o.y : 540) + 'px',
+    ...(anchoredRight
+      ? { right: o.r + 'px', transform: 'translateY(-50%)' }
+      : { left: (o.x != null ? o.x : 960) + 'px', transform: 'translate(-50%,-50%)' })
+  });
+  const inner = document.createElement('span');
+  inner.textContent = o.text;
+  if (o.bg){ inner.style.background = o.bg; inner.style.padding = '0 .2em'; }
+  el.appendChild(inner);
+  stage.appendChild(el);
+  live.push(el);
+  const dur = o.dur || 600;
+  inner.animate(IN[o.in || 'up'], {duration:dur, easing:o.in === 'pop' ? E.back : E.out, fill:'both'});
+  if (o.shake) shake(inner, dur - 120);
+  return {el, inner};
+}
+function measure(text, size, cls = ''){
+  const m = document.createElement('div');
+  m.className = 'w ' + cls;
+  Object.assign(m.style, {fontSize:size + 'px', visibility:'hidden'});
+  m.textContent = text;
+  stage.appendChild(m);
+  const w = m.offsetWidth; m.remove();
+  return w;
+}
+function shake(node, delay = 0){
+  node.animate([{translate:'0 0'},{translate:'-16px 8px'},{translate:'12px -8px'},{translate:'-6px 4px'},{translate:'0 0'}],
+    {duration:280, delay});
+}
+function out(h, kind = 'up', d = 450){
+  if (!h) return;
+  const a = h.inner.animate(OUT[kind], {duration:d, easing:E.in, fill:'forwards'});
+  a.onfinish = () => h.el.remove();
+}
+function wipe(){ stage.querySelectorAll('.w,.line').forEach(e => e.remove()); }
+function bg(c){ stage.style.background = c; }
+function flash(c){
+  const f = document.createElement('div');
+  Object.assign(f.style, {position:'absolute', inset:0, background:c, zIndex:2});
+  stage.appendChild(f); live.push(f);
+  f.animate([{opacity:1},{opacity:0}], {duration:420, fill:'forwards'}).onfinish = () => f.remove();
+}
+function stripe(y, c, d = 600, w = 1920, r = 0){
+  const s = document.createElement('div'); s.className = 'line';
+  Object.assign(s.style, {top:y + 'px', right:r + 'px', width:w + 'px', background:c, transformOrigin:'right'});
+  stage.appendChild(s); live.push(s);
+  s.animate(IN.stretch, {duration:d, easing:E.out, fill:'both'});
+  return s;
+}
+// kinetic number: counts from `from` to `to` inside a word handle
+function counter(h, from, to, ms, suffix = ''){
+  const t0 = performance.now();
+  const tick = now => {
+    const p = Math.min(1, (now - t0) / ms);
+    const eased = 1 - Math.pow(1 - p, 3);
+    h.inner.textContent = Math.round(from + (to - from) * eased) + suffix;
+    if (p < 1) rafs.push(requestAnimationFrame(tick));
+    else shake(h.inner);
+  };
+  rafs.push(requestAnimationFrame(tick));
+}
+
+/* ---------- the spot (~40s) ---------- */
+const TOTAL = 40500;
+function spot(){
+  let a, b, c, d;
+
+  // 1 — opening: work from home? drive less?
+  at(0,    () => bg(col('ink')));
+  at(200,  () => { a = word({text:'עובדים', size:280, y:400, in:'slam', dur:500, shake:true}); });
+  at(900,  () => { b = word({text:'מהבית?', size:280, y:660, color:col('cyan'), in:'pop', dur:550}); });
+  at(2200, () => { out(a, 'up', 350); out(b, 'down', 350); });
+  at(2600, () => { bg(col('blue')); a = word({text:'נוסעים', size:280, y:400, in:'right'}); });
+  at(3100, () => {
+    b = word({text:'פחות?', size:300, y:670, color:col('lime'), in:'left'});
+    b.inner.animate([{transform:'scale(1)'},{transform:'scale(.45)'}],
+      {duration:900, delay:700, easing:E.out, fill:'forwards', composite:'add'});
+  });
+  at(4800, () => { out(a, 'zoom', 350); out(b, 'shrink', 300); });
+
+  // 2 — the twist: so why pay like everyone?
+  at(5200, () => bg(col('paper')));
+  // lay the words out as one right-to-left row, measured so they never overlap
+  const q = ['אז למה', 'לשלם', 'כמו'], qSize = 160, gap = 60;
+  const widths = q.map(t => measure(t, qSize));
+  let r = (1920 - widths.reduce((s, w) => s + w, 0) - gap * (q.length - 1)) / 2;
+  const qh = [];
+  q.forEach((t, i) => {
+    const ri = r; r += widths[i] + gap;
+    at(5300 + i * 420, () => qh.push(word({text:t, size:qSize, r:ri, y:400, color:col('ink'), in:'up', dur:420})));
+  });
+  at(5300 + q.length * 420, () =>
+    qh.push(word({text:'כולם?', size:300, y:690, color:col('red'), in:'slam', dur:450, shake:true})));
+  at(8300, () => qh.forEach((h, i) => out(h, i % 2 ? 'up' : 'down', 380)));
+
+  // 3 — reveal
+  at(8800,  () => { bg(col('ink')); flash('#fff'); });
+  at(8900,  () => { a = word({text:'הכירו את', size:120, y:250, cls:'light', in:'down'}); });
+  at(9400,  () => { b = word({text:'כלל', size:260, y:460, in:'up', dur:500}); });
+  at(9800,  () => { c = word({text:'BEHAVE', size:270, y:700, cls:'latin', color:col('cyan'), in:'slam', dur:500, shake:true}); });
+  at(10400, () => stripe(850, col('lime'), 700, 1100, 410));
+  at(11000, () => { d = word({text:'מסלול חדשני בביטוח הרכב המקיף', size:64, y:940, cls:'mid', color:col('paper'), in:'fade', dur:600}); });
+  at(12600, () => { out(a, 'up'); out(b, 'up'); out(c, 'down'); out(d, 'fade', 300); });
+
+  // 4 — the promise: up to 33% off
+  at(13100, () => { wipe(); bg(col('lime')); });
+  at(13200, () => { a = word({text:'עד', size:150, x:1500, y:470, color:col('ink'), in:'down'}); });
+  at(13500, () => { b = word({text:'0%', size:460, x:880, y:470, color:col('ink'), in:'pop', dur:450}); counter(b, 0, 33, 1300, '%'); });
+  at(15000, () => { c = word({text:'הנחה', size:200, y:820, color:col('blue'), in:'up'}); });
+  at(16300, () => { out(a, 'up', 300); out(b, 'zoom', 400); out(c, 'down', 350); });
+  at(16700, () => { bg(col('ink')); a = word({text:'+ עוד עד 100 ₪', size:190, y:470, color:col('lime'), in:'right'}); });
+  at(17100, () => { b = word({text:'בחידוש הביטוח', size:110, y:680, cls:'light', in:'left'}); });
+  at(18100, () => { out(a, 'left', 350); out(b, 'left', 400); });
+
+  // 5 — no risk
+  at(18500, () => bg(col('blue')));
+  at(18600, () => { a = word({text:'אפשר רק', size:170, y:400, cls:'light', in:'down'}); });
+  at(19000, () => { b = word({text:'לחסוך.', size:300, y:640, color:col('lime'), in:'up'}); });
+  at(19900, () => { out(a, 'up', 300); out(b, 'up', 300); });
+  at(20200, () => { bg(col('red')); a = word({text:'אין התייקרות.', size:240, in:'slam', dur:450, shake:true}); });
+  at(21200, () => out(a, 'shrink', 300));
+
+  // 6 — how it works
+  at(21500, () => bg(col('ink')));
+  const steps = [['01', 'מתקינים את האפליקציה.'], ['02', 'מתחברים ב-Bluetooth.'],
+                 ['03', 'נוסעים — לפחות 6 נסיעות בחודש.'], ['04', 'חוסכים.']];
+  const sh = [];
+  at(21600, () => sh.push(word({text:'איך זה עובד?', size:90, r:160, y:150, cls:'mid', color:col('cyan'), in:'fade'})));
+  steps.forEach(([n, t], i) => at(22000 + i * 900, () => {
+    const y = 330 + i * 165, last = i === steps.length - 1;
+    sh.push(word({text:n, size:80, r:160, y, color:col('lime'), in:'pop', dur:400}));
+    sh.push(word({text:t, size:last ? 120 : 96, r:330, y, color:last ? col('lime') : '#fff', in:'up', dur:550}));
+  }));
+  at(26000, () => sh.push(word({text:'בלי מכשירים ברכב. רק הטלפון.', size:64, r:160, y:990, cls:'mid', color:col('paper'), in:'fade', dur:600})));
+  at(28200, () => sh.forEach(h => out(h, 'up', 350)));
+
+  // 7 — what's measured: rapid cuts
+  const cuts = [
+    ['קילומטראז׳.', col('paper'), col('ink')],
+    ['מהירות.',     col('cyan'),  col('ink')],
+    ['בלימות.',     col('blue'),  '#fff'],
+    ['טלפון בנהיגה.', col('red'), '#fff'],
+  ];
+  cuts.forEach(([t, bgc, fg], i) => at(28700 + i * 600, () => {
+    wipe(); bg(bgc);
+    word({text:t, size:250, color:fg, in:i % 2 ? 'right' : 'left', dur:320});
+  }));
+  at(31200, () => { wipe(); bg(col('ink')); });
+  at(31300, () => { a = word({text:'נוסעים מעט?', size:150, y:330, in:'right'}); });
+  at(31700, () => { b = word({text:'נוהגים בזהירות?', size:150, y:540, in:'left'}); });
+  at(32200, () => { c = word({text:'חוסכים.', size:220, y:780, color:col('lime'), in:'slam', dur:450, shake:true}); });
+  at(33400, () => { out(a, 'up', 300); out(b, 'up', 300); out(c, 'down', 300); });
+
+  // 8 — privacy + service
+  at(33800, () => bg(col('paper')));
+  at(33900, () => { a = word({text:'הנסיעות שלכם —', size:140, y:400, color:col('ink'), in:'down'}); });
+  at(34300, () => { b = word({text:'גלויות רק לכם.', size:180, y:600, color:col('blue'), in:'up'}); });
+  at(35500, () => { out(a, 'up', 300); out(b, 'up', 300); });
+  at(35800, () => bg(col('blue')));
+  const svc = ['ליווי 24/7', 'מונית הביתה', 'גרר מהיר'];
+  const svh = [];
+  svc.forEach((t, i) => at(35900 + i * 300, () => svh.push(word({text:t, size:130, y:330 + i * 210, in:'pop', dur:400}))));
+  at(37300, () => svh.forEach(h => out(h, 'shrink', 300)));
+
+  // 9 — close
+  at(37600, () => { bg(col('ink')); flash(col('cyan')); });
+  const tag = [['נוסעים פחות.', '#fff'], ['נוהגים טוב.', '#fff'], ['משלמים פחות.', col('lime')]];
+  const th = [];
+  tag.forEach(([t, c2], i) => at(37700 + i * 350, () =>
+    th.push(word({text:t, size:120, x:1380, y:330 + i * 170, color:c2, in:'right', dur:450}))));
+  at(38900, () => {
+    th.push(word({text:'כלל', size:150, x:500, y:380, in:'down', dur:450}));
+    th.push(word({text:'BEHAVE', size:170, x:500, y:560, cls:'latin', color:col('cyan'), in:'slam', dur:450, shake:true}));
+    stripe(670, col('lime'), 600, 600, 1120);
+  });
+  at(39600, () => th.push(word({text:'*בכפוף לתנאי הפוליסה', size:30, r:60, y:1040, cls:'light', color:'rgba(255,255,255,.6)', in:'fade'})));
+
+  // progress bar + loop
+  bar.getAnimations().forEach(x => x.cancel());
+  bar.animate([{width:'0%'}, {width:'100%'}], {duration:TOTAL, fill:'forwards'});
+  at(TOTAL + 2000, start);
+}
+
+function clear(){
+  timers.forEach(clearTimeout); timers = [];
+  rafs.forEach(cancelAnimationFrame); rafs = [];
+  live.forEach(e => e.remove()); live = [];
+  wipe();
+}
+function start(){ clear(); spot(); }
+
+document.getElementById('play').onclick = start;
+document.getElementById('pause').onclick = () => { clear(); bar.getAnimations().forEach(x => x.pause()); };
+
+document.fonts.ready.then(start);
+</script>
+</body>
+</html>
