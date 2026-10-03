@@ -50,6 +50,7 @@
   .road{position:absolute;top:1046px;left:0;right:0;height:10px;background:repeating-linear-gradient(90deg,#fff 0 70px,transparent 70px 120px);opacity:.8}
   .carshadow{position:absolute;top:1025px;left:0;width:540px;height:34px;border-radius:50%;background:rgba(0,0,0,.25);filter:blur(12px)}
   .drivecar{position:absolute;top:792px;left:0}
+  #lineLayer{position:absolute;inset:0;width:1080px;height:1920px;pointer-events:none;z-index:5}
 </style>
 </head>
 <body>
@@ -116,7 +117,7 @@
 </template>
 
 <script>
-const T = 27.5; // משך כולל
+const T = 26.0; // משך כולל
 const tpl = (id, w) => document.getElementById(id).innerHTML.replace('__W__', w);
 const A = (name, at, dur = .45, ease = 'cubic-bezier(.2,.8,.2,1)') => `animation:${name} ${dur}s ${ease} ${at}s both;`;
 const chars = (txt, at, step, name, extra = '') =>
@@ -124,44 +125,104 @@ const chars = (txt, at, step, name, extra = '') =>
 const spans = (txt, cls) => [...txt].map(c => c === ' ' ? '<span class="ch">&nbsp;</span>' : `<span class="ch ${cls}">${c}</span>`).join('');
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIO = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
 const lerp = (a, b, x) => a + (b - a) * x;
+
+// ---------- הקו הרציף: קו אחד שעובר בין הסצנות ומשנה צורה ----------
+const N = 240;
+const resample = pts => { // דגימה מחדש של פוליליין ל-N נקודות לפי אורך
+  const seg = [], L = [0];
+  for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); L.push(L[i - 1] + d); }
+  const tot = L[L.length - 1], out = [];
+  for (let k = 0, j = 1; k < N; k++) {
+    const d = tot * k / (N - 1);
+    while (j < L.length - 1 && L[j] < d) j++;
+    const f = (d - L[j - 1]) / ((L[j] - L[j - 1]) || 1);
+    out.push([lerp(pts[j - 1][0], pts[j][0], f), lerp(pts[j - 1][1], pts[j][1], f)]);
+  }
+  return out;
+};
+const line = (x1, x2, y) => resample([[x1, y], [x2, y]]);
+const rect = (x1, y1, x2, y2) => resample([[x2, y2], [x1, y2], [x1, y1], [x2, y1], [x2, y2]]);
+const GR = 400, GCX = 540, GCY = 1080; // ספידומטר
+const gaugeArc = () => resample(Array.from({ length: 80 }, (_, i) => { const a = Math.PI * (1 - i / 79); return [GCX + GR * Math.cos(a), GCY - GR * Math.sin(a)]; }));
+const SH = {
+  house: resample([[880, 1220], [200, 1220], [200, 780], [540, 440], [880, 780], [880, 1220]]),
+  ground: line(-60, 1140, 1164),
+  bay: resample([[170, 1180], [170, 560], [910, 560], [910, 1180]]),
+  ulAz: line(400, 680, 1120),
+  ulCoins: line(240, 840, 1250),
+  divider: line(140, 940, 905),
+  ulBrand: line(140, 940, 1070),
+  road: line(-60, 1140, 1046),
+  phoneA: rect(268, 738, 692, 1480),
+  phoneB: rect(318, 838, 762, 1616),
+  ul247: line(240, 840, 1200),
+  gauge: gaugeArc(),
+  ulWork: line(260, 820, 1110),
+  split: line(-60, 1140, 960),
+  ulLogo: line(200, 880, 960),
+};
+// מפתחות: זמן, צורה, צבע, שקיפות, כמה מהקו מצויר
+const K = [
+  [0.0, 'house', '#ffffff', 1, 0], [0.7, 'house', '#ffffff', 1, 1], [1.7, 'house', '#ffffff', 1, 1],
+  [2.15, 'ground', '#ffffff', 1, 1], [3.0, 'ground', '#ffffff', 1, 1],
+  [3.45, 'bay', '#ffffff', 1, 1], [4.85, 'bay', '#ffffff', 1, 1],
+  [5.15, 'ulAz', '#ffffff', 1, 1], [6.0, 'ulAz', '#ffffff', 1, 1],
+  [6.3, 'ulCoins', '#ffd166', 1, 1], [7.0, 'ulCoins', '#ffd166', 1, 1],
+  [7.25, 'divider', '#00205b', 1, 1], [7.55, 'divider', '#00205b', 1, 1],
+  [7.65, 'divider', '#00205b', 0, 1], [9.2, 'ulBrand', '#0047bb', 0, 1],
+  [9.6, 'ulBrand', '#0047bb', 1, 1], [10.0, 'ulBrand', '#0047bb', 1, 1], [10.05, 'ulBrand', '#ffffff', 1, 1], [10.75, 'ulBrand', '#ffffff', 1, 1],
+  [11.0, 'road', '#ffffff', 1, 1], [13.75, 'road', '#ffffff', 1, 1],
+  [14.15, 'phoneA', '#0047bb', 1, 1], [15.25, 'phoneA', '#0047bb', 1, 1],
+  [15.6, 'phoneB', '#ffffff', 1, 1], [16.75, 'phoneB', '#ffffff', 1, 1],
+  [17.1, 'ul247', '#00205b', 1, 1], [17.75, 'ul247', '#00205b', 1, 1],
+  [18.2, 'gauge', '#ffffff', 1, 1], [20.5, 'gauge', '#ffffff', 1, 1],
+  [20.8, 'ulWork', '#ffffff', 1, 1], [21.1, 'ulWork', '#ffffff', 1, 1], [21.15, 'ulWork', '#00205b', 1, 1], [21.7, 'ulWork', '#00205b', 1, 1],
+  [22.0, 'split', '#ffffff', 1, 1], [23.5, 'split', '#ffffff', 1, 1],
+  [23.9, 'ulLogo', '#0047bb', 1, 1], [T, 'ulLogo', '#0047bb', 1, 1],
+];
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, f) => { const x = hex(a), y = hex(b); return `rgb(${x.map((v, i) => Math.round(lerp(v, y[i], f))).join(',')})`; };
+function drawLine(t) {
+  let i = 0; while (i < K.length - 2 && K[i + 1][0] <= t) i++;
+  const [t0, s0, c0, o0, d0] = K[i], [t1, s1, c1, o1, d1] = K[i + 1];
+  const f = easeIO((t - t0) / ((t1 - t0) || 1));
+  const a = SH[s0], b = SH[s1];
+  const pts = a.map((p, k) => [lerp(p[0], b[k][0], f), lerp(p[1], b[k][1], f)]);
+  const el = document.getElementById('gline');
+  el.setAttribute('points', pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' '));
+  el.setAttribute('stroke', mix(c0, c1, f));
+  el.setAttribute('opacity', lerp(o0, o1, f));
+  el.setAttribute('stroke-dashoffset', 1 - lerp(d0, d1, f));
+}
 
 // כל סצנה: התחלה, סוף, רקע, תוכן (זמנים אבסולוטיים) ופונקציית עדכון לכל פריים
 const S = [];
 const sc = (s, e, bg, html, upd) => S.push({ s, e, bg, html: html(s), upd });
 
-// 1 – "עובדים" נכנסים לתוך הבית, והגג נסגר עליהם
+// 1 – "עובדים" נופלים לתוך הבית
 sc(0, 2.0, '#7f9bb8', s => `
-  <svg style="position:absolute;inset:0" viewBox="0 0 1080 1920" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M200 760 V1220 H880 V760" style="--len:1820;stroke-dasharray:1820;${A('draw', s, .6)}"/>
-    <path d="M140 790 L540 440" style="transform-origin:140px 790px;${A('roofL', s + 1.0, .45)}"/>
-    <path d="M940 790 L540 440" style="transform-origin:940px 790px;${A('roofR', s + 1.0, .45)}"/>
-  </svg>
-  <div class="w" style="top:880px;font-size:190px">${[...'עובדים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? -1 : 1) * 18}deg;${A('dropIn', s + .35 + i * .07, .4)}">${c}</span>`).join('')}</div>
-  <div class="w" style="top:1330px;font-size:170px;${A('up', s + 1.45, .35)}">מהבית?</div>`);
+  <div class="w" style="top:880px;font-size:190px">${[...'עובדים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? -1 : 1) * 18}deg;${A('dropIn', s + .45 + i * .07, .4)}">${c}</span>`).join('')}</div>
+  <div class="w" style="top:1330px;font-size:170px;${A('up', s + 1.2, .35)}">מהבית?</div>`);
 
-// 2 – הרכב שלכם (הרכב עובר דרך המילה)
+// 2 – הרכב שלכם (הרכב נוחת על הקו)
 sc(2.0, 3.0, 'var(--steel)', s => `
   <div class="w" style="top:700px;font-size:300px;${A('in', s, .2)}">הרכב</div>
-  <div class="shadow" style="top:1090px;width:72%"></div>
-  <div class="obj" style="top:820px;${A('objL', s, .55)}"><div class="spin">${tpl('car', 820)}</div></div>
-  <div class="w" style="top:1200px;font-size:130px;${A('up', s + .45, .3)}">שלכם</div>`);
+  <div class="obj" style="top:820px;${A('objL', s, .55)}">${tpl('car', 820)}</div>
+  <div class="w" style="top:1240px;font-size:130px;${A('up', s + .45, .3)}">שלכם</div>`);
 
-// 3 – "חונה" בתוך משבצת חניה, לא זז, והימים חולפים סביבו
+// 3 – "חונה" בתוך משבצת החניה, והימים חולפים
 const days = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳'];
 sc(3.0, 5.0, '#3b4757', s => `
-  <svg style="position:absolute;inset:0" viewBox="0 0 1080 1920" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="square">
-    <path d="M170 1180 V560 H910 V1180" style="--len:2100;stroke-dasharray:2100;${A('draw', s, .5)}"/>
-    <path d="M60 1480 H1020" stroke-dasharray="70 50" stroke-width="10" opacity=".5"/>
-  </svg>
   <div class="psign" style="${A('pop', s + .3, .35)}">P</div>
-  <div class="w" style="top:740px;font-size:270px;${A('in', s + .2, .2)}">חונה</div>
+  <div class="w" style="top:740px;font-size:270px;${A('in', s + .3, .2)}">חונה</div>
   <div class="days">${days.map((d, i) => `<span class="day" data-i="${i}">${d}</span>`).join('')}</div>
   <div class="w" style="top:1560px;font-size:100px;${A('up', s + 1.4, .35)}">רוב השבוע?</div>`,
   (t, el, s) => {
     el.querySelectorAll('.day').forEach((d, i) => {
       const on = t >= s + .55 + i * .22;
-      d.classList.toggle('on', on && (i === 1 ? false : true));
+      d.classList.toggle('on', on && i !== 1);
       d.classList.toggle('drive', on && i === 1); // יום אחד במשרד
     });
   });
@@ -173,7 +234,6 @@ sc(5.5, 6.0, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220
 // 5 – לשלם
 sc(6.0, 7.0, 'var(--blue)', s => `
   <div class="w" style="top:760px;font-size:280px;${A('in', s, .15)}">לשלם</div>
-  <div class="shadow" style="top:1180px;width:44%"></div>
   <div class="obj" style="top:880px;${A('objUp', s + .1, .45)}">${tpl('coins', 380)}</div>`);
 
 // 6 – כמו מי שנוסע / "כל יום" שמתרבה ומסתחרר
@@ -188,9 +248,8 @@ sc(7.6, 8.75, 'var(--sky)', s => Array.from({ length: ROWS }, (_, i) =>
     el.querySelectorAll('.row').forEach((r, i) => {
       const order = [5, 6, 4, 7, 3, 8, 2, 9, 1, 10, 0, 11].indexOf(i);
       const appear = .9 * Math.sqrt(order / ROWS); // מאיץ
-      const v = clamp((lt - appear) / .08);
       const dist = (lt * lt * 900 + lt * 300) * (i % 2 ? 1 : -1); // מהירות עולה
-      r.style.opacity = v;
+      r.style.opacity = clamp((lt - appear) / .08);
       r.style.transform = `translateX(${(dist % 640) - 320}px) skewX(${clamp(lt) * (i % 2 ? -12 : 12)}deg)`;
     });
   });
@@ -204,18 +263,18 @@ sc(9.25, 10.0, 'var(--pale)', s => `
 sc(10.0, 10.75, 'var(--navy)', s => `
   <div class="w" style="top:860px;font-size:170px;${A('push', s, .75, 'linear')}">כלל <span style="color:var(--sky)">BEHAVE</span></div>`);
 
-// 8 – המכונית נוסעת על הטקסט: מעיפה את "נוסעים" ומשאירה אחריה "יכולים לשלם"
+// 8 – המכונית נוסעת על הקו: מעיפה את "נוסעים" ומשאירה אחריה "יכולים לשלם"
 const CAR_W = 600, DRIVE0 = 11.0, DRIVE1 = 12.4;
 sc(10.75, 13.75, 'var(--sky)', s => `
-  <div class="w" id="w-old" style="top:720px;font-size:220px">${spans('נוסעים', 'o')}</div>
-  <div class="w" id="w-new" style="top:760px;font-size:150px;color:var(--navy)">${spans('יכולים לשלם', 'n')}</div>
-  <div class="road"></div>
+  <div class="w" style="top:720px;font-size:220px">${spans('נוסעים', 'o')}</div>
+  <div class="w" style="top:760px;font-size:150px;color:var(--navy)">${spans('יכולים לשלם', 'n')}</div>
   <div class="carshadow"></div>
   <div class="drivecar"><div style="transform:scaleX(-1)">${tpl('car', CAR_W)}</div></div>
   <div class="w" style="top:1160px;font-size:270px;${A('up', s + .2, .35)}">פחות</div>`,
   (t, el, s) => {
     const car = el.querySelector('.drivecar'), sh = el.querySelector('.carshadow');
-    const x = lerp(1180, -CAR_W - 120, ease((t - DRIVE0) / (DRIVE1 - DRIVE0)) * .35 + clamp((t - DRIVE0) / (DRIVE1 - DRIVE0)) * .65);
+    const u = (t - DRIVE0) / (DRIVE1 - DRIVE0);
+    const x = lerp(1180, -CAR_W - 120, ease(u) * .35 + clamp(u) * .65);
     car.style.transform = `translateX(${x}px) translateY(${Math.sin(t * 40) * 2}px)`;
     sh.style.transform = `translateX(${x + 40}px)`;
     car.querySelectorAll('.wheel').forEach(w => w.style.transform = `rotate(${-(1180 - x) * 1.1}deg)`);
@@ -235,19 +294,17 @@ sc(10.75, 13.75, 'var(--sky)', s => `
     });
   });
 
-// 9 – אפליקציה חכמה שמלווה את הנהיגה שלכם
+// 9 – אפליקציה חכמה שמלווה את הנהיגה שלכם (הקו ממסגר את הטלפון)
 sc(13.75, 15.25, 'var(--ice)', s => `
   <div class="w" style="top:330px;font-size:130px;color:var(--blue);${A('in', s, .15)}">אפליקציה חכמה</div>
   <div class="w" style="top:500px;font-size:70px;color:var(--slate);font-weight:700;${A('up', s + .35, .3)}">שמלווה את הנהיגה שלכם</div>
-  <div class="shadow" style="top:1500px;width:34%"></div>
   <div class="obj" style="top:760px;margin-left:-60px;${A('objUp', s + .15, .45)}">${tpl('phone', 380)}</div>
-  <div class="obj" style="top:860px;margin-left:200px;${A('pop', s + .6, .4)}">${tpl('bt', 170)}</div>`);
+  <div class="obj" style="top:860px;margin-left:250px;${A('pop', s + .6, .4)}">${tpl('bt', 170)}</div>`);
 
 // 10 – משוב אחרי כל נסיעה
 sc(15.25, 16.75, 'var(--blue)', s => `
   <div class="w" style="top:330px;font-size:250px">${chars('משוב', s, .08, 'glow')}</div>
   <div class="w" style="top:610px;font-size:80px;color:var(--ice);font-weight:700;${A('up', s + .45, .35)}">אחרי כל נסיעה</div>
-  <div class="shadow" style="top:1640px;width:34%"></div>
   <div class="obj" style="top:860px;${A('objUp', s + .3, .5)}">${tpl('phone', 400)}</div>`);
 
 // 11 – ליווי אישי 24/7
@@ -255,56 +312,46 @@ sc(16.75, 17.75, 'var(--steel)', s => `
   <div class="w" style="top:620px;font-size:150px;${A('in', s, .15)}">ליווי אישי</div>
   <div class="w" style="top:840px;font-size:340px;color:var(--navy);direction:ltr;${A('pop', s + .3, .4)}">24/7</div>`);
 
-// 12 – המחיר מתכווץ: יורד בכל פעמה, קטן ונהיה דק
-const PRICES = [4800, 4400, 4000, 3650, 3350, 3200];
-sc(17.75, 20.0, 'var(--navy)', s => `
-  <div class="w" style="top:430px;font-size:100px;${A('in', s, .2)}">וחיסכון של עד</div>
-  <div class="w" id="price" style="top:900px;direction:ltr;color:#fff">₪<span class="num">4,800</span></div>
-  <div class="w" style="top:1700px;font-size:30px;font-weight:500;opacity:.6">*המחירים להמחשה בלבד</div>`,
-  (t, el, s) => {
-    const lt = t - s - .45, step = clamp(Math.floor(lt / .3), 0, PRICES.length - 1), ph = lt - step * .3;
-    const k = clamp(lt / (.3 * (PRICES.length - 1)));
-    const pr = el.querySelector('#price');
-    pr.style.fontSize = lerp(330, 170, ease(k)) + 'px';
-    pr.style.fontWeight = Math.round(lerp(900, 200, ease(k)));
-    pr.style.letterSpacing = lerp(0, 6, k) + 'px';
-    const bump = lt > 0 && step > 0 ? Math.max(0, 1 - ph / .12) : 0; // קפיצה קטנה בכל ירידה
-    pr.style.transform = `translateY(${bump * 30}px) scale(${1 - bump * .04})`;
-    el.querySelector('.num').textContent = PRICES[lt < 0 ? 0 : step].toLocaleString('en-US');
-    pr.style.color = step === PRICES.length - 1 ? 'var(--sky)' : '#fff';
-  });
-
-// 13 – ספידומטר טיפוגרפי: המחוג נעצר על 33%
-const R = 400, CX = 540, CY = 1080, MAX = 50;
-const ang = v => Math.PI * (1 - v / MAX);
-const pt = (v, r) => [CX + r * Math.cos(ang(v)), CY - r * Math.sin(ang(v))];
-const ticks = Array.from({ length: 11 }, (_, i) => { const v = i * 5, [x1, y1] = pt(v, R - 10), [x2, y2] = pt(v, R - (i % 2 ? 50 : 80)); return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#fff" stroke-width="${i % 2 ? 6 : 12}" stroke-linecap="round"/>`; }).join('')
-  + [0, 10, 20, 30, 40, 50].map(v => { const [x, y] = pt(v, R - 140); return `<text x="${x}" y="${y + 20}" text-anchor="middle" font-family="Heebo" font-weight="700" font-size="52" fill="#fff" opacity=".7">${v}</text>`; }).join('');
-sc(20.0, 22.0, 'var(--blue)', s => `
+// 12 – ספידומטר: מחיר הביטוח יורד ב-33%
+const pt = (v, r) => { const a = Math.PI * (1 - v / 100); return [GCX + r * Math.cos(a), GCY - r * Math.sin(a)]; };
+const arcD = (v0, v1, r) => { const [x0, y0] = pt(v0, r), [x1, y1] = pt(v1, r); return `M${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1}`; };
+const ticks = Array.from({ length: 11 }, (_, i) => { const v = i * 10, [x1, y1] = pt(v, GR - 30), [x2, y2] = pt(v, GR - (i % 5 ? 65 : 95)); return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#fff" stroke-width="${i % 5 ? 6 : 12}" stroke-linecap="round" opacity=".8"/>`; }).join('');
+sc(17.75, 20.5, 'var(--navy)', s => `
+  <div class="w" style="top:330px;font-size:110px;${A('in', s + .1, .25)}">וחיסכון של עד</div>
   <svg style="position:absolute;inset:0" viewBox="0 0 1080 1920">
-    <path d="M${CX - R} ${CY} A${R} ${R} 0 0 1 ${CX + R} ${CY}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="44"/>
-    <path id="arc" d="M${CX - R} ${CY} A${R} ${R} 0 0 1 ${CX + R} ${CY}" fill="none" stroke="#00a3e0" stroke-width="44" stroke-dasharray="${Math.PI * R}" stroke-dashoffset="${Math.PI * R}"/>
-    ${ticks}
-    <g id="needle"><path d="M${CX} ${CY - 18} L${CX - R + 70} ${CY} L${CX} ${CY + 18} Z" fill="#fff"/><circle cx="${CX}" cy="${CY}" r="36" fill="#00205b" stroke="#fff" stroke-width="10"/></g>
+    <g style="${A('in', s + .35, .3)}">${ticks}
+      <text x="${GCX}" y="${GCY + 100}" text-anchor="middle" font-family="Heebo" font-weight="700" font-size="44" fill="#fff" opacity=".7">מחיר הביטוח</text>
+      <text x="${GCX - GR}" y="${GCY + 70}" text-anchor="middle" font-family="Heebo" font-weight="700" font-size="40" fill="#fff" opacity=".6">0</text>
+      <text x="${GCX + GR}" y="${GCY + 70}" text-anchor="middle" font-family="Heebo" font-weight="700" font-size="40" fill="#fff" opacity=".6">100%</text>
+    </g>
+    <path id="gFill" fill="none" stroke="#00a3e0" stroke-width="60"/>
+    <path id="gSave" fill="none" stroke="#7fd3f5" stroke-width="60" stroke-dasharray="14 10"/>
+    <g id="needle" style="${A('in', s + .45, .2)}"><path d="M${GCX} ${GCY - 20} L${GCX - GR + 60} ${GCY} L${GCX} ${GCY + 20} Z" fill="#fff"/><circle cx="${GCX}" cy="${GCY}" r="38" fill="#0047bb" stroke="#fff" stroke-width="10"/></g>
   </svg>
-  <div class="w" style="top:1200px;font-size:300px;direction:ltr"><span id="gv">0</span>%<span style="font-size:160px;vertical-align:top">*</span></div>
-  <div class="w" style="top:1540px;font-size:100px;${A('up', s + .9, .35)}">בביטוח המקיף</div>`,
+  <div class="w" style="top:1200px;font-size:300px;color:var(--sky);direction:ltr"><span id="gv">0</span>%<span style="font-size:160px;vertical-align:top">*</span></div>
+  <div class="w" style="top:1540px;font-size:100px;${A('up', s + 1.6, .35)}">בביטוח המקיף</div>`,
   (t, el, s) => {
     const lt = t - s;
-    // מחוג: נזרק עד 46, חוזר ומתייצב על 33
-    let v = lt < .55 ? lerp(0, 46, ease(lt / .55)) : 33 + 13 * Math.exp(-(lt - .55) * 6) * Math.cos((lt - .55) * 9);
-    v = clamp(v, 0, MAX);
-    el.querySelector('#needle').setAttribute('transform', `rotate(${v / MAX * 180} ${CX} ${CY})`);
-    el.querySelector('#arc').setAttribute('stroke-dashoffset', Math.PI * R * (1 - v / MAX));
-    el.querySelector('#gv').textContent = Math.round(v);
+    // מחוג: עולה למחיר מלא (100), ואז צונח ומתייצב על 67
+    let v;
+    if (lt < .9) v = lerp(0, 100, ease((lt - .45) / .45));
+    else v = 67 + 33 * Math.exp(-(lt - .9) * 4.5) * Math.cos((lt - .9) * 7);
+    v = clamp(v, 0, 100);
+    const fillIn = clamp((lt - .45) / .2);
+    el.querySelector('#needle').setAttribute('transform', `rotate(${v / 100 * 180} ${GCX} ${GCY})`);
+    el.querySelector('#gFill').setAttribute('d', arcD(0.01, Math.max(.02, v), GR));
+    el.querySelector('#gFill').setAttribute('opacity', fillIn);
+    const saved = lt > .9 ? Math.max(0, 100 - v) : 0;
+    el.querySelector('#gSave').setAttribute('d', saved > .5 ? arcD(v, 100, GR) : '');
+    el.querySelector('#gv').textContent = Math.round(clamp(saved, 0, 33));
   });
 
-// 14 – עובדים / מהבית?
-sc(22.0, 22.6, 'var(--sky)', s => `<div class="w" style="top:860px;font-size:200px;${A('in', s, .12)}">עובדים</div>`);
-sc(22.6, 23.2, 'var(--mist)', s => `<div class="w" style="top:860px;font-size:200px;color:var(--navy);${A('in', s, .12)}">מהבית?</div>`);
+// 13 – עובדים / מהבית?
+sc(20.5, 21.1, 'var(--sky)', s => `<div class="w" style="top:860px;font-size:200px;${A('in', s, .12)}">עובדים</div>`);
+sc(21.1, 21.7, 'var(--mist)', s => `<div class="w" style="top:860px;font-size:200px;color:var(--navy);${A('in', s, .12)}">מהבית?</div>`);
 
-// 15 – מסך מפוצל: תנו גם לביטוח שלכם / לעבוד חכם יותר
-sc(23.2, 25.0, 'var(--blue)', s => `
+// 14 – מסך מפוצל (הקו הופך לקו החיתוך): תנו גם לביטוח שלכם / לעבוד חכם יותר
+sc(21.7, 23.5, 'var(--blue)', s => `
   <div class="half" style="top:0;background:var(--blue);${A('slideDown', s, .3)}">
     <div class="w" style="top:520px;font-size:96px">תנו גם לביטוח שלכם</div>
   </div>
@@ -313,10 +360,10 @@ sc(23.2, 25.0, 'var(--blue)', s => `
     <div class="w" style="top:440px;font-size:150px;color:var(--sky);${A('up', s + 1.1, .35)}">יותר.</div>
   </div>`);
 
-// 16 – לוגו + סלוגן על לבן
-sc(25.0, T, '#ffffff', s => `
-  <div class="w" style="top:780px;font-size:150px;color:var(--navy);${A('wipe', s + .1, .7)}">כלל <span style="color:var(--blue)">BEHAVE</span></div>
-  <div class="w" style="top:990px;font-size:66px;color:var(--slate);font-weight:700;${A('up', s + .8, .4)}">נוסעים חכם. <span style="color:var(--sky)">משלמים בהתאם.</span></div>
+// 15 – לוגו + סלוגן על לבן (הקו נהיה קו תחתון ללוגו)
+sc(23.5, T, '#ffffff', s => `
+  <div class="w" style="top:760px;font-size:150px;color:var(--navy);${A('wipe', s + .3, .7)}">כלל <span style="color:var(--blue)">BEHAVE</span></div>
+  <div class="w" style="top:1010px;font-size:66px;color:var(--slate);font-weight:700;${A('up', s + .9, .4)}">נוסעים חכם. <span style="color:var(--sky)">משלמים בהתאם.</span></div>
   <div class="w" style="top:1700px;font-size:30px;color:var(--slate);font-weight:500;white-space:normal;padding:0 80px;line-height:1.4;${A('in', s + 1.2, .4)}">*שיעור החיסכון תלוי באיכות הנהיגה ובהיקף הנסועה. בכפוף לתנאי הפוליסה ולחיתום החברה.</div>`);
 
 // בניית DOM
@@ -326,6 +373,7 @@ S.forEach(o => {
   d.className = 'sc'; d.style.background = o.bg; d.innerHTML = o.html;
   stage.appendChild(d); o.el = d;
 });
+stage.insertAdjacentHTML('beforeend', `<svg id="lineLayer" viewBox="0 0 1080 1920"><polyline id="gline" fill="none" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1"/></svg>`);
 // גלגלים מסתובבים בסצנת "הרכב שלכם"
 S[1].el.querySelectorAll('.wheel').forEach(w => w.style.animation = 'spinWheel .55s cubic-bezier(.2,.8,.2,1) 2.0s both');
 
@@ -333,6 +381,7 @@ window.__setTime = t => {
   S.forEach(o => o.el.style.display = (t >= o.s && t < o.e) ? 'block' : 'none');
   document.getAnimations().forEach(a => { a.pause(); a.currentTime = t * 1000; });
   S.forEach(o => { if (o.upd && t >= o.s && t < o.e) o.upd(t, o.el, o.s); });
+  drawLine(t);
 };
 window.__duration = T;
 if (!navigator.webdriver) {
