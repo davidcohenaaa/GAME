@@ -28,7 +28,7 @@ roots = [110, 87.3, 130.8, 98]
 nb = int(DUR / beat)
 for b in range(nb):
     at = b * beat
-    end = at >= 21.0  # סיום: רק פד
+    end = at >= 20.0  # סיום: רק פד
     if not end:
         add(kick(), at, .9)
         add(hat(), at + beat / 2, .35)
@@ -39,9 +39,9 @@ for b in range(nb):
     if b % 8 == 0:
         add(pad([f for f in chords[(b // 8) % 4]], min(4, DUR - at)), at, .18)
 # אקורד סיום + פעמון
-add(pad([220, 277.2, 329.6, 440], 2.5), 21.0, .3)
+add(pad([220, 277.2, 329.6, 440], 3.5), 20.0, .3)
 for k, f in enumerate([880, 1108.7, 1318.5]):
-    add(tone(f, 1.5, 'sine') * .6, 21.0 + k * .12, .25)
+    add(tone(f, 1.5, 'sine') * .6, 20.0 + k * .12, .25)
 # פייד-אאוט
 fade = int(SR * 1.2); out[-fade:] *= np.linspace(1, 0, fade)
 out /= np.max(np.abs(out)) * 1.1

@@ -114,45 +114,41 @@ const chars = (txt, at, step, name, extra = '') =>
 const S = [];
 const sc = (s, e, bg, html) => S.push({ s, e, bg, html: html(s) });
 
-// 1 – עובדים / מהבית?
+// 1 – עובדים מהבית?
 sc(0, 1.5, '#7f9bb8', s => `
   <div class="w" style="top:520px;font-size:150px;${A('in', s, .3)}"><span style="display:inline-block;${A('dim', s + .7, .3)}">עובדים</span></div>
   <div class="shadow" style="top:1080px;width:60%"></div>
   <div class="obj" style="top:760px;${A('objUp', s + .1, .5)}">${tpl('laptop', 640)}</div>
   <div class="w" style="top:1200px;font-size:170px;${A('up', s + .7, .35)}">מהבית?</div>`);
 
-// 2 – הרכב (הרכב עובר דרך המילה)
+// 2 – הרכב שלכם (הרכב עובר דרך המילה)
 sc(1.5, 2.5, 'var(--steel)', s => `
-  <div class="w" style="top:760px;font-size:300px;${A('in', s, .2)}">הרכב</div>
-  <div class="shadow" style="top:1150px;width:72%"></div>
-  <div class="obj" style="top:880px;${A('objL', s, .55)}">${tpl('car', 820)}</div>`);
+  <div class="w" style="top:700px;font-size:300px;${A('in', s, .2)}">הרכב</div>
+  <div class="shadow" style="top:1090px;width:72%"></div>
+  <div class="obj" style="top:820px;${A('objL', s, .55)}">${tpl('car', 820)}</div>
+  <div class="w" style="top:1200px;font-size:130px;${A('up', s + .45, .3)}">שלכם</div>`);
 
-// 3 – חונה (מילה ענקית חתוכה מאחורי הרכב)
+// 3 – חונה רוב השבוע?
 sc(2.5, 4.0, 'var(--pale)', s => `
   <div style="position:absolute;inset:0;${A('push', s, 1.5, 'linear')}">
     <div class="w" style="top:640px;font-size:560px;color:rgba(255,255,255,.95);right:-140px;left:-140px;${A('in', s, .25)}">חונה</div>
   </div>
   <div class="shadow" style="top:1170px;width:72%"></div>
   <div class="obj" style="top:900px">${tpl('car', 820)}</div>
-  <div class="w" style="top:1360px;font-size:64px;color:var(--slate);font-weight:700;${A('up', s + .6, .4)}">רוב השבוע</div>`);
+  <div class="w" style="top:1340px;font-size:100px;color:var(--navy);${A('up', s + .5, .35)}">רוב השבוע?</div>`);
 
-// 4 – 4 ימים מהבית
-sc(4.0, 5.0, 'var(--navy)', s => `
-  <div class="w" style="top:700px;font-size:380px;color:var(--sky);${A('pop', s, .4)}">4</div>
-  <div class="w" style="top:1120px;font-size:120px;${A('up', s + .3, .35)}">ימים מהבית</div>`);
+// 4 – אז / למה
+sc(4.0, 4.5, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">אז</div>`);
+sc(4.5, 5.0, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">למה</div>`);
 
-// 5–6 – אז / למה
-sc(5.0, 5.5, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">אז</div>`);
-sc(5.5, 6.0, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">למה</div>`);
-
-// 7 – לשלם (מטבעות מול הטקסט)
-sc(6.0, 7.0, 'var(--blue)', s => `
+// 5 – לשלם
+sc(5.0, 6.0, 'var(--blue)', s => `
   <div class="w" style="top:760px;font-size:280px;${A('in', s, .15)}">לשלם</div>
   <div class="shadow" style="top:1180px;width:44%"></div>
   <div class="obj" style="top:880px;${A('objUp', s + .1, .45)}">${tpl('coins', 380)}</div>`);
 
-// 8 – מסך מפוצל: כמו מי / שנוסע כל יום?
-sc(7.0, 8.5, 'var(--steel)', s => `
+// 6 – מסך מפוצל: כמו מי / שנוסע כל יום?
+sc(6.0, 7.5, 'var(--steel)', s => `
   <div class="half" style="top:0;background:var(--slate);${A('slideDown', s, .35)}">
     <div class="w" style="top:380px;font-size:150px">כמו מי</div>
   </div>
@@ -161,73 +157,66 @@ sc(7.0, 8.5, 'var(--steel)', s => `
     <div class="w" style="top:400px;font-size:110px;color:var(--navy);${A('up', s + .9, .3)}">כל יום?</div>
   </div>`);
 
-// 9 – הכירו כלל BEHAVE (הטקסט ממשיך מעבר לחיתוך הרקע)
-sc(8.5, 9.25, 'var(--pale)', s => `
+// 7 – הכירו את כלל BEHAVE (הטקסט ממשיך מעבר לחיתוך הרקע)
+sc(7.5, 8.25, 'var(--pale)', s => `
   <div class="w" style="top:700px;font-size:110px;color:var(--slate);${A('in', s, .3)}">הכירו את</div>
   <div class="w" style="top:860px;font-size:170px;color:var(--blue);${A('fromR', s + .2, .55)}">כלל BEHAVE</div>`);
-sc(9.25, 10.0, 'var(--navy)', s => `
-  <div class="w" style="top:860px;font-size:170px">כלל <span style="color:var(--sky)">BEHAVE</span></div>
-  <div class="w" style="top:1080px;font-size:56px;font-weight:500;opacity:.85;${A('up', s + .15, .35)}">ביטוח רכב לפי נסועה ואיכות נהיגה</div>`);
+sc(8.25, 9.0, 'var(--navy)', s => `
+  <div class="w" style="top:860px;font-size:170px;${A('push', s, .75, 'linear')}">כלל <span style="color:var(--sky)">BEHAVE</span></div>`);
 
-// 10 – נוסעים → משלמים (אותיות נופלות ומתחלפות) / פחות
-const fall = [...'נוסעים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? 1 : -1) * (20 + i * 9)}deg;${A('fallOut', 10.75 + i * .03, .4, 'ease-in')}">${c}</span>`).join('');
-const drop = [...'משלמים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? -1 : 1) * 25}deg;${A('dropIn', 10.95 + i * .04, .35)}">${c}</span>`).join('');
-sc(10.0, 11.75, 'var(--sky)', s => `
+// 8 – נוסעים פחות → יכולים לשלם פחות (האותיות נופלות ומתחלפות)
+const fall = [...'נוסעים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? 1 : -1) * (20 + i * 9)}deg;${A('fallOut', 9.8 + i * .03, .4, 'ease-in')}">${c}</span>`).join('');
+const drop = [...'יכולים לשלם'].map((c, i) => c === ' ' ? ' ' : `<span class="ch" style="--r:${(i % 2 ? -1 : 1) * 25}deg;${A('dropIn', 10.0 + i * .035, .35)}">${c}</span>`).join('');
+sc(9.0, 11.0, 'var(--sky)', s => `
   <div class="w" style="top:720px;font-size:200px;${A('in', s, .15)}">${fall}</div>
-  <div class="w" style="top:720px;font-size:200px;color:var(--navy)">${drop}</div>
+  <div class="w" style="top:740px;font-size:150px;color:var(--navy)">${drop}</div>
   <div class="w" style="top:960px;font-size:260px;${A('up', s + .3, .35)}">פחות</div>`);
 
-// 11 – בלי התקנה (טלפון + בלוטות׳)
-sc(11.75, 13.0, 'var(--ice)', s => `
-  <div class="w" style="top:380px;font-size:160px;color:var(--blue);${A('in', s, .15)}">בלי התקנה</div>
-  <div class="w" style="top:560px;font-size:64px;color:var(--slate);font-weight:700;${A('up', s + .3, .3)}">רק חיבור בבלוטות׳ לרכב</div>
+// 9 – אפליקציה חכמה שמלווה את הנהיגה שלכם
+sc(11.0, 12.5, 'var(--ice)', s => `
+  <div class="w" style="top:330px;font-size:130px;color:var(--blue);${A('in', s, .15)}">אפליקציה חכמה</div>
+  <div class="w" style="top:500px;font-size:70px;color:var(--slate);font-weight:700;${A('up', s + .35, .3)}">שמלווה את הנהיגה שלכם</div>
   <div class="shadow" style="top:1500px;width:34%"></div>
   <div class="obj" style="top:760px;margin-left:-60px;${A('objUp', s + .15, .45)}">${tpl('phone', 380)}</div>
-  <div class="obj" style="top:860px;margin-left:200px;${A('pop', s + .55, .4)}">${tpl('bt', 170)}</div>`);
+  <div class="obj" style="top:860px;margin-left:200px;${A('pop', s + .6, .4)}">${tpl('bt', 170)}</div>`);
 
-// 12 – מסך מפוצל: ויתור על / השתתפות עצמית
-sc(13.0, 14.5, 'var(--navy)', s => `
-  <div class="half" style="top:0;background:var(--navy);${A('slideDown', s, .3)}">
-    <div class="w" style="top:560px;font-size:170px">ויתור על</div>
-  </div>
-  <div class="half" style="top:50%;background:var(--mist);${A('slideUp', s + .2, .35)}">
-    <div class="obj" style="top:90px;${A('pop', s + .5, .45)}">${tpl('shield', 300)}</div>
-    <div class="w" style="top:500px;font-size:120px;color:var(--navy)">${chars('השתתפות עצמית', s + .45, .045, 'glow')}</div>
-    <div class="w" style="top:670px;font-size:44px;color:var(--slate);font-weight:600;${A('in', s + 1, .3)}">לא משנה מי אשם · בכפוף לתנאי הפוליסה</div>
-  </div>`);
-
-// 13 – משוב (חשיפת אותיות) + טלפון עם ציון
-sc(14.5, 16.0, 'var(--blue)', s => `
+// 10 – משוב אחרי כל נסיעה
+sc(12.5, 14.0, 'var(--blue)', s => `
   <div class="w" style="top:330px;font-size:250px">${chars('משוב', s, .08, 'glow')}</div>
   <div class="w" style="top:610px;font-size:80px;color:var(--ice);font-weight:700;${A('up', s + .45, .35)}">אחרי כל נסיעה</div>
   <div class="shadow" style="top:1640px;width:34%"></div>
   <div class="obj" style="top:860px;${A('objUp', s + .3, .5)}">${tpl('phone', 400)}</div>`);
 
-// 14 – ליווי 24/7
-sc(16.0, 17.0, 'var(--steel)', s => `
-  <div class="w" style="top:600px;font-size:150px;${A('in', s, .15)}">ליווי אישי</div>
-  <div class="w" style="top:820px;font-size:340px;color:var(--navy);direction:ltr;${A('pop', s + .3, .4)}">24/7</div>
-  <div class="w" style="top:1220px;font-size:60px;font-weight:700;${A('up', s + .55, .3)}">מונית הביתה · גרר מהיר</div>`);
+// 11 – ליווי אישי 24/7
+sc(14.0, 15.0, 'var(--steel)', s => `
+  <div class="w" style="top:620px;font-size:150px;${A('in', s, .15)}">ליווי אישי</div>
+  <div class="w" style="top:840px;font-size:340px;color:var(--navy);direction:ltr;${A('pop', s + .3, .4)}">24/7</div>`);
 
-// 15 – חיסכון עד ₪1,000
-sc(17.0, 18.5, 'var(--navy)', s => `
-  <div class="w" style="top:640px;font-size:110px;${A('in', s, .2)}">חיסכון של עד</div>
-  <div class="w" style="top:820px;font-size:220px;color:var(--sky);${A('pop', s + .15, .4)}">₪<span id="counter">1,000</span>*</div>
-  <div class="w" style="top:1170px;font-size:64px;font-weight:600;opacity:.85;${A('up', s + .5, .3)}">בשנה</div>`);
+// 12 – וחיסכון של עד 33% בביטוח המקיף*
+sc(15.0, 17.0, 'var(--navy)', s => `
+  <div class="w" style="top:560px;font-size:110px;${A('in', s, .2)}">וחיסכון של עד</div>
+  <div class="w" style="top:720px;font-size:360px;color:var(--sky);direction:ltr;${A('pop', s + .15, .4)}"><span id="counter">33</span>%<span style="font-size:200px;vertical-align:top">*</span></div>
+  <div class="w" style="top:1140px;font-size:100px;${A('up', s + .6, .35)}">בביטוח המקיף</div>`);
 
-// 16 – עובדים / מהבית? / תשדרגו
-sc(18.5, 19.25, 'var(--sky)', s => `<div class="w" style="top:860px;font-size:200px;${A('in', s, .12)}">עובדים</div>`);
-sc(19.25, 20.0, 'var(--mist)', s => `<div class="w" style="top:860px;font-size:200px;color:var(--navy);${A('in', s, .12)}">מהבית?</div>`);
-sc(20.0, 21.0, 'var(--blue)', s => `
-  <div style="position:absolute;inset:0;${A('push', s, 1, 'linear')}">
-    <div class="w" style="top:820px;font-size:250px;${A('pop', s, .35)}">תשדרגו</div>
+// 13 – עובדים / מהבית?
+sc(17.0, 17.6, 'var(--sky)', s => `<div class="w" style="top:860px;font-size:200px;${A('in', s, .12)}">עובדים</div>`);
+sc(17.6, 18.2, 'var(--mist)', s => `<div class="w" style="top:860px;font-size:200px;color:var(--navy);${A('in', s, .12)}">מהבית?</div>`);
+
+// 14 – מסך מפוצל: תנו גם לביטוח שלכם / לעבוד חכם יותר
+sc(18.2, 20.0, 'var(--blue)', s => `
+  <div class="half" style="top:0;background:var(--blue);${A('slideDown', s, .3)}">
+    <div class="w" style="top:520px;font-size:96px">תנו גם לביטוח שלכם</div>
+  </div>
+  <div class="half" style="top:50%;background:var(--ice);${A('slideUp', s + .35, .35)}">
+    <div class="w" style="top:260px;font-size:150px;color:var(--navy)">${chars('לעבוד חכם', s + .6, .05, 'glow')}</div>
+    <div class="w" style="top:440px;font-size:150px;color:var(--sky);${A('up', s + 1.1, .35)}">יותר.</div>
   </div>`);
 
-// 17 – לוגו על לבן
-sc(21.0, T, '#ffffff', s => `
-  <div class="w" style="top:810px;font-size:150px;color:var(--navy);${A('wipe', s + .1, .7)}">כלל <span style="color:var(--blue)">BEHAVE</span></div>
-  <div class="w" style="top:1020px;font-size:52px;color:var(--slate);font-weight:600;${A('in', s + .7, .4)}">כלל ביטוח ופיננסים</div>
-  <div class="w" style="top:1700px;font-size:30px;color:var(--slate);font-weight:500;white-space:normal;padding:0 80px;line-height:1.4;${A('in', s + 1, .4)}">*גובה ההנחה תלוי באיכות הנהיגה ובהיקף הנסועה. בכפוף לתנאי הפוליסה ולחיתום החברה.</div>`);
+// 15 – לוגו + סלוגן על לבן
+sc(20.0, T, '#ffffff', s => `
+  <div class="w" style="top:780px;font-size:150px;color:var(--navy);${A('wipe', s + .1, .7)}">כלל <span style="color:var(--blue)">BEHAVE</span></div>
+  <div class="w" style="top:990px;font-size:66px;color:var(--slate);font-weight:700;${A('up', s + .8, .4)}">נוסעים חכם. <span style="color:var(--sky)">משלמים בהתאם.</span></div>
+  <div class="w" style="top:1700px;font-size:30px;color:var(--slate);font-weight:500;white-space:normal;padding:0 80px;line-height:1.4;${A('in', s + 1.2, .4)}">*שיעור החיסכון תלוי באיכות הנהיגה ובהיקף הנסועה. בכפוף לתנאי הפוליסה ולחיתום החברה.</div>`);
 
 // בניית DOM
 const stage = document.getElementById('stage');
@@ -243,8 +232,8 @@ const counter = document.getElementById('counter');
 window.__setTime = t => {
   S.forEach(o => o.el.style.display = (t >= o.s && t < o.e) ? 'block' : 'none');
   document.getAnimations().forEach(a => { a.pause(); a.currentTime = t * 1000; });
-  const p = Math.min(1, Math.max(0, (t - 17.2) / 1.0));
-  counter.textContent = Math.round(1000 * (1 - Math.pow(1 - p, 3))).toLocaleString('en-US');
+  const p = Math.min(1, Math.max(0, (t - 15.2) / 1.0));
+  counter.textContent = Math.round(33 * (1 - Math.pow(1 - p, 3)));
 };
 window.__duration = T;
 if (!navigator.webdriver) {
