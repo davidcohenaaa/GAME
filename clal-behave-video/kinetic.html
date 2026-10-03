@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>כלל BEHAVE – קינטי</title>
+<style>
+  @font-face{font-family:'Heebo';font-weight:100 900;src:url(fonts/heebo-hebrew.woff2) format('woff2');unicode-range:U+0307-0308,U+0590-05FF,U+200C-2010,U+20AA,U+25CC,U+FB1D-FB4F}
+  @font-face{font-family:'Heebo';font-weight:100 900;src:url(fonts/heebo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  /* פלטת כלל (קירוב) */
+  :root{--navy:#00205b;--blue:#0047bb;--sky:#00a3e0;--ice:#e8f3fc;--mist:#c9d9ea;--steel:#8fa6bf;--slate:#5f6f82;--pale:#dfe6ee}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#000;font-family:'Heebo',sans-serif}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+  .sc{position:absolute;inset:0;display:none;overflow:hidden}
+  .sc::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,rgba(255,255,255,.12),rgba(0,0,0,.14) 100%)}
+  .w{position:absolute;left:0;right:0;text-align:center;color:#fff;font-weight:900;line-height:1;white-space:nowrap}
+  .obj{position:absolute;left:50%;transform:translateX(-50%)}
+  .shadow{position:absolute;left:50%;width:70%;height:40px;transform:translateX(-50%);border-radius:50%;background:rgba(0,0,0,.28);filter:blur(14px)}
+  .half{position:absolute;left:0;right:0;height:50%;overflow:hidden}
+  .ch{display:inline-block}
+
+  @keyframes in{from{opacity:0}to{opacity:1}}
+  @keyframes dim{from{opacity:1}to{opacity:.35}}
+  @keyframes up{from{opacity:0;transform:translateY(80px)}to{opacity:1;transform:none}}
+  @keyframes pop{0%{opacity:0;transform:scale(.6)}60%{opacity:1;transform:scale(1.06)}100%{transform:scale(1)}}
+  @keyframes push{from{transform:scale(1)}to{transform:scale(1.08)}}
+  @keyframes pushObj{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.06)}}
+  @keyframes fromR{from{transform:translateX(900px)}to{transform:none}}
+  @keyframes fromL{from{transform:translateX(-900px)}to{transform:none}}
+  @keyframes objL{from{transform:translateX(-160%)}to{transform:translateX(-50%)}}
+  @keyframes objR{from{transform:translateX(60%)}to{transform:translateX(-50%)}}
+  @keyframes objUp{from{opacity:0;transform:translate(-50%,120px)}to{opacity:1;transform:translate(-50%,0)}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes slideDown{from{transform:translateY(-100%)}to{transform:none}}
+  @keyframes wipe{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+  @keyframes wipeR{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+  @keyframes glow{from{opacity:.25}to{opacity:1}}
+  @keyframes fallOut{0%{transform:none;opacity:1}100%{transform:translateY(160px) rotate(var(--r));opacity:0}}
+  @keyframes dropIn{0%{transform:translateY(-140px) rotate(var(--r));opacity:0}100%{transform:none;opacity:1}}
+  @keyframes spinWheel{to{transform:rotate(-720deg)}}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<!-- אובייקטים (איורים שטוחים במקום צילומי מוצר) -->
+<template id="car">
+  <svg viewBox="0 0 520 220" width="__W__">
+    <path d="M30 150 Q28 110 70 100 L150 90 Q190 40 260 36 L340 36 Q390 38 430 90 L470 100 Q500 108 498 150 L496 166 Q495 176 484 176 L40 176 Q30 176 30 166 Z" fill="#0047bb"/>
+    <path d="M168 92 Q200 52 262 50 L300 50 L300 94 Z" fill="#cfe6f7"/>
+    <path d="M316 50 L338 50 Q378 52 410 94 L316 94 Z" fill="#cfe6f7"/>
+    <rect x="300" y="50" width="16" height="44" fill="#0047bb"/>
+    <path d="M40 132 H490" stroke="#00a3e0" stroke-width="8" stroke-linecap="round"/>
+    <rect x="452" y="112" width="34" height="14" rx="6" fill="#fff8d6"/>
+    <rect x="34" y="112" width="22" height="14" rx="6" fill="#ff6b6b"/>
+    <g class="wheel" style="transform-origin:135px 176px"><circle cx="135" cy="176" r="40" fill="#11213f"/><circle cx="135" cy="176" r="18" fill="#c9d9ea"/><path d="M135 158 V194 M117 176 H153" stroke="#11213f" stroke-width="5"/></g>
+    <g class="wheel" style="transform-origin:395px 176px"><circle cx="395" cy="176" r="40" fill="#11213f"/><circle cx="395" cy="176" r="18" fill="#c9d9ea"/><path d="M395 158 V194 M377 176 H413" stroke="#11213f" stroke-width="5"/></g>
+  </svg>
+</template>
+<template id="laptop">
+  <svg viewBox="0 0 400 260" width="__W__">
+    <rect x="60" y="10" width="280" height="190" rx="14" fill="#11213f"/>
+    <rect x="74" y="24" width="252" height="160" rx="6" fill="#00a3e0"/>
+    <rect x="96" y="48" width="120" height="16" rx="8" fill="#fff" opacity=".9"/>
+    <rect x="96" y="76" width="200" height="12" rx="6" fill="#fff" opacity=".55"/>
+    <rect x="96" y="98" width="170" height="12" rx="6" fill="#fff" opacity=".55"/>
+    <rect x="96" y="128" width="80" height="34" rx="10" fill="#0047bb"/>
+    <path d="M20 206 H380 L360 236 H40 Z" fill="#e8f3fc"/>
+    <rect x="160" y="206" width="80" height="8" rx="4" fill="#c9d9ea"/>
+  </svg>
+</template>
+<template id="coins">
+  <svg viewBox="0 0 300 300" width="__W__">
+    <g fill="#ffd166" stroke="#c99a1e" stroke-width="5">
+      <ellipse cx="150" cy="250" rx="110" ry="30"/><rect x="40" y="220" width="220" height="30"/><ellipse cx="150" cy="220" rx="110" ry="30"/>
+      <rect x="40" y="180" width="220" height="40"/><ellipse cx="150" cy="180" rx="110" ry="30"/>
+      <rect x="40" y="140" width="220" height="40"/><ellipse cx="150" cy="140" rx="110" ry="30"/>
+    </g>
+    <text x="150" y="156" text-anchor="middle" font-family="Heebo" font-weight="900" font-size="54" fill="#c99a1e">₪</text>
+  </svg>
+</template>
+<template id="phone">
+  <svg viewBox="0 0 240 440" width="__W__">
+    <rect x="10" y="10" width="220" height="420" rx="34" fill="#11213f"/>
+    <rect x="24" y="40" width="192" height="360" rx="18" fill="#fff"/>
+    <rect x="90" y="22" width="60" height="8" rx="4" fill="#33466b"/>
+    <circle cx="120" cy="170" r="72" fill="none" stroke="#e8f3fc" stroke-width="18"/>
+    <circle cx="120" cy="170" r="72" fill="none" stroke="#00a3e0" stroke-width="18" stroke-linecap="round" stroke-dasharray="452" stroke-dashoffset="40" transform="rotate(-90 120 170)" class="ring"/>
+    <text x="120" y="190" text-anchor="middle" font-family="Heebo" font-weight="900" font-size="58" fill="#00205b">92</text>
+    <rect x="50" y="270" width="140" height="14" rx="7" fill="#c9d9ea"/>
+    <rect x="66" y="298" width="108" height="14" rx="7" fill="#e8f3fc"/>
+    <rect x="60" y="334" width="120" height="40" rx="20" fill="#0047bb"/>
+  </svg>
+</template>
+<template id="shield">
+  <svg viewBox="0 0 300 340" width="__W__">
+    <path d="M150 14 L270 58 V160 C270 250 214 306 150 326 C86 306 30 250 30 160 V58 Z" fill="#fff"/>
+    <path d="M150 44 L244 78 V160 C244 232 200 278 150 296 C100 278 56 232 56 160 V78 Z" fill="#0047bb"/>
+    <path d="M100 170 L138 208 L206 134" stroke="#fff" stroke-width="24" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</template>
+<template id="bt">
+  <svg viewBox="0 0 120 120" width="__W__"><circle cx="60" cy="60" r="56" fill="#0047bb"/><path d="M42 40 L78 76 L60 94 V26 L78 44 L42 80" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</template>
+
+<script>
+const T = 23.5; // משך כולל
+const tpl = (id, w) => document.getElementById(id).innerHTML.replace('__W__', w);
+const A = (name, at, dur = .45, ease = 'cubic-bezier(.2,.8,.2,1)') => `animation:${name} ${dur}s ${ease} ${at}s both;`;
+const chars = (txt, at, step, name, extra = '') =>
+  [...txt].map((c, i) => c === ' ' ? ' ' : `<span class="ch" style="${A(name, at + i * step, .35)}${extra.replace('$i', i)}">${c}</span>`).join('');
+
+// כל סצנה: התחלה, סוף, רקע, ותוכן (זמנים אבסולוטיים)
+const S = [];
+const sc = (s, e, bg, html) => S.push({ s, e, bg, html: html(s) });
+
+// 1 – עובדים / מהבית?
+sc(0, 1.5, '#7f9bb8', s => `
+  <div class="w" style="top:520px;font-size:150px;${A('in', s, .3)}"><span style="display:inline-block;${A('dim', s + .7, .3)}">עובדים</span></div>
+  <div class="shadow" style="top:1080px;width:60%"></div>
+  <div class="obj" style="top:760px;${A('objUp', s + .1, .5)}">${tpl('laptop', 640)}</div>
+  <div class="w" style="top:1200px;font-size:170px;${A('up', s + .7, .35)}">מהבית?</div>`);
+
+// 2 – הרכב (הרכב עובר דרך המילה)
+sc(1.5, 2.5, 'var(--steel)', s => `
+  <div class="w" style="top:760px;font-size:300px;${A('in', s, .2)}">הרכב</div>
+  <div class="shadow" style="top:1150px;width:72%"></div>
+  <div class="obj" style="top:880px;${A('objL', s, .55)}">${tpl('car', 820)}</div>`);
+
+// 3 – חונה (מילה ענקית חתוכה מאחורי הרכב)
+sc(2.5, 4.0, 'var(--pale)', s => `
+  <div style="position:absolute;inset:0;${A('push', s, 1.5, 'linear')}">
+    <div class="w" style="top:640px;font-size:560px;color:rgba(255,255,255,.95);right:-140px;left:-140px;${A('in', s, .25)}">חונה</div>
+  </div>
+  <div class="shadow" style="top:1170px;width:72%"></div>
+  <div class="obj" style="top:900px">${tpl('car', 820)}</div>
+  <div class="w" style="top:1360px;font-size:64px;color:var(--slate);font-weight:700;${A('up', s + .6, .4)}">רוב השבוע</div>`);
+
+// 4 – 4 ימים מהבית
+sc(4.0, 5.0, 'var(--navy)', s => `
+  <div class="w" style="top:700px;font-size:380px;color:var(--sky);${A('pop', s, .4)}">4</div>
+  <div class="w" style="top:1120px;font-size:120px;${A('up', s + .3, .35)}">ימים מהבית</div>`);
+
+// 5–6 – אז / למה
+sc(5.0, 5.5, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">אז</div>`);
+sc(5.5, 6.0, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">למה</div>`);
+
+// 7 – לשלם (מטבעות מול הטקסט)
+sc(6.0, 7.0, 'var(--blue)', s => `
+  <div class="w" style="top:760px;font-size:280px;${A('in', s, .15)}">לשלם</div>
+  <div class="shadow" style="top:1180px;width:44%"></div>
+  <div class="obj" style="top:880px;${A('objUp', s + .1, .45)}">${tpl('coins', 380)}</div>`);
+
+// 8 – מסך מפוצל: כמו מי / שנוסע כל יום?
+sc(7.0, 8.5, 'var(--steel)', s => `
+  <div class="half" style="top:0;background:var(--slate);${A('slideDown', s, .35)}">
+    <div class="w" style="top:380px;font-size:150px">כמו מי</div>
+  </div>
+  <div class="half" style="top:50%;background:var(--sky);${A('slideUp', s + .4, .35)}">
+    <div class="w" style="top:200px;font-size:150px">שנוסע</div>
+    <div class="w" style="top:400px;font-size:110px;color:var(--navy);${A('up', s + .9, .3)}">כל יום?</div>
+  </div>`);
+
+// 9 – הכירו כלל BEHAVE (הטקסט ממשיך מעבר לחיתוך הרקע)
+sc(8.5, 9.25, 'var(--pale)', s => `
+  <div class="w" style="top:700px;font-size:110px;color:var(--slate);${A('in', s, .3)}">הכירו את</div>
+  <div class="w" style="top:860px;font-size:170px;color:var(--blue);${A('fromR', s + .2, .55)}">כלל BEHAVE</div>`);
+sc(9.25, 10.0, 'var(--navy)', s => `
+  <div class="w" style="top:860px;font-size:170px">כלל <span style="color:var(--sky)">BEHAVE</span></div>
+  <div class="w" style="top:1080px;font-size:56px;font-weight:500;opacity:.85;${A('up', s + .15, .35)}">ביטוח רכב לפי נסועה ואיכות נהיגה</div>`);
+
+// 10 – נוסעים → משלמים (אותיות נופלות ומתחלפות) / פחות
+const fall = [...'נוסעים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? 1 : -1) * (20 + i * 9)}deg;${A('fallOut', 10.75 + i * .03, .4, 'ease-in')}">${c}</span>`).join('');
+const drop = [...'משלמים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? -1 : 1) * 25}deg;${A('dropIn', 10.95 + i * .04, .35)}">${c}</span>`).join('');
+sc(10.0, 11.75, 'var(--sky)', s => `
+  <div class="w" style="top:720px;font-size:200px;${A('in', s, .15)}">${fall}</div>
+  <div class="w" style="top:720px;font-size:200px;color:var(--navy)">${drop}</div>
+  <div class="w" style="top:960px;font-size:260px;${A('up', s + .3, .35)}">פחות</div>`);
+
+// 11 – בלי התקנה (טלפון + בלוטות׳)
+sc(11.75, 13.0, 'var(--ice)', s => `
+  <div class="w" style="top:380px;font-size:160px;color:var(--blue);${A('in', s, .15)}">בלי התקנה</div>
+  <div class="w" style="top:560px;font-size:64px;color:var(--slate);font-weight:700;${A('up', s + .3, .3)}">רק חיבור בבלוטות׳ לרכב</div>
+  <div class="shadow" style="top:1500px;width:34%"></div>
+  <div class="obj" style="top:760px;margin-left:-60px;${A('objUp', s + .15, .45)}">${tpl('phone', 380)}</div>
+  <div class="obj" style="top:860px;margin-left:200px;${A('pop', s + .55, .4)}">${tpl('bt', 170)}</div>`);
+
+// 12 – מסך מפוצל: ויתור על / השתתפות עצמית
+sc(13.0, 14.5, 'var(--navy)', s => `
+  <div class="half" style="top:0;background:var(--navy);${A('slideDown', s, .3)}">
+    <div class="w" style="top:560px;font-size:170px">ויתור על</div>
+  </div>
+  <div class="half" style="top:50%;background:var(--mist);${A('slideUp', s + .2, .35)}">
+    <div class="obj" style="top:90px;${A('pop', s + .5, .45)}">${tpl('shield', 300)}</div>
+    <div class="w" style="top:500px;font-size:120px;color:var(--navy)">${chars('השתתפות עצמית', s + .45, .045, 'glow')}</div>
+    <div class="w" style="top:670px;font-size:44px;color:var(--slate);font-weight:600;${A('in', s + 1, .3)}">לא משנה מי אשם · בכפוף לתנאי הפוליסה</div>
+  </div>`);
+
+// 13 – משוב (חשיפת אותיות) + טלפון עם ציון
+sc(14.5, 16.0, 'var(--blue)', s => `
+  <div class="w" style="top:330px;font-size:250px">${chars('משוב', s, .08, 'glow')}</div>
+  <div class="w" style="top:610px;font-size:80px;color:var(--ice);font-weight:700;${A('up', s + .45, .35)}">אחרי כל נסיעה</div>
+  <div class="shadow" style="top:1640px;width:34%"></div>
+  <div class="obj" style="top:860px;${A('objUp', s + .3, .5)}">${tpl('phone', 400)}</div>`);
+
+// 14 – ליווי 24/7
+sc(16.0, 17.0, 'var(--steel)', s => `
+  <div class="w" style="top:600px;font-size:150px;${A('in', s, .15)}">ליווי אישי</div>
+  <div class="w" style="top:820px;font-size:340px;color:var(--navy);direction:ltr;${A('pop', s + .3, .4)}">24/7</div>
+  <div class="w" style="top:1220px;font-size:60px;font-weight:700;${A('up', s + .55, .3)}">מונית הביתה · גרר מהיר</div>`);
+
+// 15 – חיסכון עד ₪1,000
+sc(17.0, 18.5, 'var(--navy)', s => `
+  <div class="w" style="top:640px;font-size:110px;${A('in', s, .2)}">חיסכון של עד</div>
+  <div class="w" style="top:820px;font-size:220px;color:var(--sky);${A('pop', s + .15, .4)}">₪<span id="counter">1,000</span>*</div>
+  <div class="w" style="top:1170px;font-size:64px;font-weight:600;opacity:.85;${A('up', s + .5, .3)}">בשנה</div>`);
+
+// 16 – עובדים / מהבית? / תשדרגו
+sc(18.5, 19.25, 'var(--sky)', s => `<div class="w" style="top:860px;font-size:200px;${A('in', s, .12)}">עובדים</div>`);
+sc(19.25, 20.0, 'var(--mist)', s => `<div class="w" style="top:860px;font-size:200px;color:var(--navy);${A('in', s, .12)}">מהבית?</div>`);
+sc(20.0, 21.0, 'var(--blue)', s => `
+  <div style="position:absolute;inset:0;${A('push', s, 1, 'linear')}">
+    <div class="w" style="top:820px;font-size:250px;${A('pop', s, .35)}">תשדרגו</div>
+  </div>`);
+
+// 17 – לוגו על לבן
+sc(21.0, T, '#ffffff', s => `
+  <div class="w" style="top:810px;font-size:150px;color:var(--navy);${A('wipe', s + .1, .7)}">כלל <span style="color:var(--blue)">BEHAVE</span></div>
+  <div class="w" style="top:1020px;font-size:52px;color:var(--slate);font-weight:600;${A('in', s + .7, .4)}">כלל ביטוח ופיננסים</div>
+  <div class="w" style="top:1700px;font-size:30px;color:var(--slate);font-weight:500;white-space:normal;padding:0 80px;line-height:1.4;${A('in', s + 1, .4)}">*גובה ההנחה תלוי באיכות הנהיגה ובהיקף הנסועה. בכפוף לתנאי הפוליסה ולחיתום החברה.</div>`);
+
+// בניית DOM
+const stage = document.getElementById('stage');
+S.forEach(o => {
+  const d = document.createElement('div');
+  d.className = 'sc'; d.style.background = o.bg; d.innerHTML = o.html;
+  stage.appendChild(d); o.el = d;
+});
+// גלגלים מסתובבים בסצנת "הרכב" בלבד
+S[1].el.querySelectorAll('.wheel').forEach(w => w.style.animation = 'spinWheel .55s cubic-bezier(.2,.8,.2,1) 1.5s both');
+
+const counter = document.getElementById('counter');
+window.__setTime = t => {
+  S.forEach(o => o.el.style.display = (t >= o.s && t < o.e) ? 'block' : 'none');
+  document.getAnimations().forEach(a => { a.pause(); a.currentTime = t * 1000; });
+  const p = Math.min(1, Math.max(0, (t - 17.2) / 1.0));
+  counter.textContent = Math.round(1000 * (1 - Math.pow(1 - p, 3))).toLocaleString('en-US');
+};
+window.__duration = T;
+if (!navigator.webdriver) {
+  const st = performance.now();
+  (function tick(){ __setTime(((performance.now() - st) / 1000) % T); requestAnimationFrame(tick); })();
+}
+</script>
+</body>
+</html>
