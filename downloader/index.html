@@ -46,9 +46,7 @@
       <h2 id="title"></h2>
       <p id="meta"></p>
       <div class="row">
-        <select id="mode"><option value="video">וידאו</option><option value="audio">אודיו בלבד</option></select>
-        <select id="quality"></select>
-        <a class="btn" id="dl" href="#">הורד</a>
+        <a class="btn" id="dl" href="#">הורד MP4</a>
       </div>
     </div>
   </div>
@@ -59,9 +57,7 @@ const $ = id => document.getElementById(id);
 const status = (t, err) => { $('status').textContent = t; $('status').className = err ? 'err' : ''; };
 
 function updateLink() {
-  const q = new URLSearchParams({ url: $('url').value.trim(), mode: $('mode').value, quality: $('quality').value });
-  $('dl').href = '/api/download?' + q;
-  $('quality').style.display = $('mode').value === 'audio' ? 'none' : '';
+  $('dl').href = '/api/download?' + new URLSearchParams({ url: $('url').value.trim() });
 }
 
 $('go').onclick = async () => {
@@ -77,15 +73,11 @@ $('go').onclick = async () => {
     $('title').textContent = d.title || 'ללא כותרת';
     const mins = d.duration ? Math.floor(d.duration / 60) + ':' + String(Math.round(d.duration % 60)).padStart(2, '0') : '';
     $('meta').textContent = [d.site, d.uploader, mins].filter(Boolean).join(' · ');
-    const opts = [['best', 'איכות מקסימלית']];
-    [1080, 720, 480, 360].filter(h => d.heights.some(x => x >= h)).forEach(h => opts.push([h, h + 'p']));
-    $('quality').innerHTML = opts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
     updateLink(); $('preview').style.display = 'block'; status('');
   } catch (e) { status(e.message || 'שגיאה', true); }
   $('go').disabled = false;
 };
 $('url').addEventListener('keydown', e => e.key === 'Enter' && $('go').click());
-$('mode').onchange = $('quality').onchange = updateLink;
 $('dl').onclick = () => status('ההורדה התחילה… ייתכן שייקח כמה רגעים.');
 </script>
 </body>
