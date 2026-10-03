@@ -1,0 +1,10 @@
+{
+  "name": "Video Downloader",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": { "ghcr.io/devcontainers-contrib/features/apt-get-packages:1": { "packages": "ffmpeg" } },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/downloader",
+  "postCreateCommand": "pip install -r requirements.txt",
+  "postAttachCommand": "HOST=0.0.0.0 PORT=8000 nohup python app.py > /tmp/app.log 2>&1 &",
+  "forwardPorts": [8000],
+  "portsAttributes": { "8000": { "label": "Video Downloader", "onAutoForward": "openBrowser" } }
+}
