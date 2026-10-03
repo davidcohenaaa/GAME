@@ -5,6 +5,7 @@
 CLI:   python app.py URL [--out DIR]
 """
 import argparse
+import os
 import json
 import mimetypes
 import shutil
@@ -137,8 +138,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("url", nargs="?", help="כתובת לסרטון (ללא כתובת: מפעיל שרת web)")
     ap.add_argument("--out", default=".", help="תיקיית יעד ב-CLI")
-    ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--port", type=int, default=8000)
+    ap.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
+    ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
     a = ap.parse_args()
     if not HAS_FFMPEG:
         print("אזהרה: ffmpeg לא נמצא - הפורמט עשוי לא להיות MP4. מומלץ להתקין ffmpeg.", file=sys.stderr)
