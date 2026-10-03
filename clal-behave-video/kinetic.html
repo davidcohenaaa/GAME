@@ -38,6 +38,18 @@
   @keyframes fallOut{0%{transform:none;opacity:1}100%{transform:translateY(160px) rotate(var(--r));opacity:0}}
   @keyframes dropIn{0%{transform:translateY(-140px) rotate(var(--r));opacity:0}100%{transform:none;opacity:1}}
   @keyframes spinWheel{to{transform:rotate(-720deg)}}
+  @keyframes draw{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+  @keyframes roofL{from{transform:rotate(-38deg);opacity:0}to{transform:none;opacity:1}}
+  @keyframes roofR{from{transform:rotate(38deg);opacity:0}to{transform:none;opacity:1}}
+  .psign{position:absolute;top:300px;right:110px;width:150px;height:150px;border-radius:30px;background:var(--blue);color:#fff;font:900 110px/150px 'Heebo';text-align:center;direction:ltr}
+  .days{position:absolute;top:1250px;left:0;right:0;display:flex;justify-content:center;gap:26px}
+  .day{width:150px;height:150px;border-radius:26px;border:5px solid rgba(255,255,255,.3);color:rgba(255,255,255,.35);font:800 70px/140px 'Heebo';text-align:center;transition:none}
+  .day.on{background:#fff;color:var(--navy);border-color:#fff}
+  .day.drive{background:var(--sky);color:#fff;border-color:var(--sky)}
+  .row{position:absolute;left:-400px;right:-400px;text-align:center;font:900 130px/160px 'Heebo';white-space:nowrap;opacity:0}
+  .road{position:absolute;top:1046px;left:0;right:0;height:10px;background:repeating-linear-gradient(90deg,#fff 0 70px,transparent 70px 120px);opacity:.8}
+  .carshadow{position:absolute;top:1025px;left:0;width:540px;height:34px;border-radius:50%;background:rgba(0,0,0,.25);filter:blur(12px)}
+  .drivecar{position:absolute;top:792px;left:0}
 </style>
 </head>
 <body>
@@ -104,76 +116,127 @@
 </template>
 
 <script>
-const T = 23.5; // משך כולל
+const T = 27.5; // משך כולל
 const tpl = (id, w) => document.getElementById(id).innerHTML.replace('__W__', w);
 const A = (name, at, dur = .45, ease = 'cubic-bezier(.2,.8,.2,1)') => `animation:${name} ${dur}s ${ease} ${at}s both;`;
 const chars = (txt, at, step, name, extra = '') =>
   [...txt].map((c, i) => c === ' ' ? ' ' : `<span class="ch" style="${A(name, at + i * step, .35)}${extra.replace('$i', i)}">${c}</span>`).join('');
+const spans = (txt, cls) => [...txt].map(c => c === ' ' ? '<span class="ch">&nbsp;</span>' : `<span class="ch ${cls}">${c}</span>`).join('');
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const lerp = (a, b, x) => a + (b - a) * x;
 
-// כל סצנה: התחלה, סוף, רקע, ותוכן (זמנים אבסולוטיים)
+// כל סצנה: התחלה, סוף, רקע, תוכן (זמנים אבסולוטיים) ופונקציית עדכון לכל פריים
 const S = [];
-const sc = (s, e, bg, html) => S.push({ s, e, bg, html: html(s) });
+const sc = (s, e, bg, html, upd) => S.push({ s, e, bg, html: html(s), upd });
 
-// 1 – עובדים מהבית?
-sc(0, 1.5, '#7f9bb8', s => `
-  <div class="w" style="top:520px;font-size:150px;${A('in', s, .3)}"><span style="display:inline-block;${A('dim', s + .7, .3)}">עובדים</span></div>
-  <div class="shadow" style="top:1080px;width:60%"></div>
-  <div class="obj" style="top:760px;${A('objUp', s + .1, .5)}">${tpl('laptop', 640)}</div>
-  <div class="w" style="top:1200px;font-size:170px;${A('up', s + .7, .35)}">מהבית?</div>`);
+// 1 – "עובדים" נכנסים לתוך הבית, והגג נסגר עליהם
+sc(0, 2.0, '#7f9bb8', s => `
+  <svg style="position:absolute;inset:0" viewBox="0 0 1080 1920" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M200 760 V1220 H880 V760" style="--len:1820;stroke-dasharray:1820;${A('draw', s, .6)}"/>
+    <path d="M140 790 L540 440" style="transform-origin:140px 790px;${A('roofL', s + 1.0, .45)}"/>
+    <path d="M940 790 L540 440" style="transform-origin:940px 790px;${A('roofR', s + 1.0, .45)}"/>
+  </svg>
+  <div class="w" style="top:880px;font-size:190px">${[...'עובדים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? -1 : 1) * 18}deg;${A('dropIn', s + .35 + i * .07, .4)}">${c}</span>`).join('')}</div>
+  <div class="w" style="top:1330px;font-size:170px;${A('up', s + 1.45, .35)}">מהבית?</div>`);
 
 // 2 – הרכב שלכם (הרכב עובר דרך המילה)
-sc(1.5, 2.5, 'var(--steel)', s => `
+sc(2.0, 3.0, 'var(--steel)', s => `
   <div class="w" style="top:700px;font-size:300px;${A('in', s, .2)}">הרכב</div>
   <div class="shadow" style="top:1090px;width:72%"></div>
-  <div class="obj" style="top:820px;${A('objL', s, .55)}">${tpl('car', 820)}</div>
+  <div class="obj" style="top:820px;${A('objL', s, .55)}"><div class="spin">${tpl('car', 820)}</div></div>
   <div class="w" style="top:1200px;font-size:130px;${A('up', s + .45, .3)}">שלכם</div>`);
 
-// 3 – חונה רוב השבוע?
-sc(2.5, 4.0, 'var(--pale)', s => `
-  <div style="position:absolute;inset:0;${A('push', s, 1.5, 'linear')}">
-    <div class="w" style="top:640px;font-size:560px;color:rgba(255,255,255,.95);right:-140px;left:-140px;${A('in', s, .25)}">חונה</div>
-  </div>
-  <div class="shadow" style="top:1170px;width:72%"></div>
-  <div class="obj" style="top:900px">${tpl('car', 820)}</div>
-  <div class="w" style="top:1340px;font-size:100px;color:var(--navy);${A('up', s + .5, .35)}">רוב השבוע?</div>`);
+// 3 – "חונה" בתוך משבצת חניה, לא זז, והימים חולפים סביבו
+const days = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳'];
+sc(3.0, 5.0, '#3b4757', s => `
+  <svg style="position:absolute;inset:0" viewBox="0 0 1080 1920" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="square">
+    <path d="M170 1180 V560 H910 V1180" style="--len:2100;stroke-dasharray:2100;${A('draw', s, .5)}"/>
+    <path d="M60 1480 H1020" stroke-dasharray="70 50" stroke-width="10" opacity=".5"/>
+  </svg>
+  <div class="psign" style="${A('pop', s + .3, .35)}">P</div>
+  <div class="w" style="top:740px;font-size:270px;${A('in', s + .2, .2)}">חונה</div>
+  <div class="days">${days.map((d, i) => `<span class="day" data-i="${i}">${d}</span>`).join('')}</div>
+  <div class="w" style="top:1560px;font-size:100px;${A('up', s + 1.4, .35)}">רוב השבוע?</div>`,
+  (t, el, s) => {
+    el.querySelectorAll('.day').forEach((d, i) => {
+      const on = t >= s + .55 + i * .22;
+      d.classList.toggle('on', on && (i === 1 ? false : true));
+      d.classList.toggle('drive', on && i === 1); // יום אחד במשרד
+    });
+  });
 
 // 4 – אז / למה
-sc(4.0, 4.5, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">אז</div>`);
-sc(4.5, 5.0, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">למה</div>`);
+sc(5.0, 5.5, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">אז</div>`);
+sc(5.5, 6.0, 'var(--slate)', s => `<div class="w" style="top:860px;font-size:220px;${A('in', s, .12)}">למה</div>`);
 
 // 5 – לשלם
-sc(5.0, 6.0, 'var(--blue)', s => `
+sc(6.0, 7.0, 'var(--blue)', s => `
   <div class="w" style="top:760px;font-size:280px;${A('in', s, .15)}">לשלם</div>
   <div class="shadow" style="top:1180px;width:44%"></div>
   <div class="obj" style="top:880px;${A('objUp', s + .1, .45)}">${tpl('coins', 380)}</div>`);
 
-// 6 – מסך מפוצל: כמו מי / שנוסע כל יום?
-sc(6.0, 7.5, 'var(--steel)', s => `
-  <div class="half" style="top:0;background:var(--slate);${A('slideDown', s, .35)}">
-    <div class="w" style="top:380px;font-size:150px">כמו מי</div>
-  </div>
-  <div class="half" style="top:50%;background:var(--sky);${A('slideUp', s + .4, .35)}">
-    <div class="w" style="top:200px;font-size:150px">שנוסע</div>
-    <div class="w" style="top:400px;font-size:110px;color:var(--navy);${A('up', s + .9, .3)}">כל יום?</div>
-  </div>`);
+// 6 – כמו מי שנוסע / "כל יום" שמתרבה ומסתחרר
+sc(7.0, 7.6, 'var(--steel)', s => `
+  <div class="w" style="top:720px;font-size:170px;${A('in', s, .12)}">כמו מי</div>
+  <div class="w" style="top:930px;font-size:170px;color:var(--navy);${A('up', s + .2, .25)}">שנוסע</div>`);
+const ROWS = 12;
+sc(7.6, 8.75, 'var(--sky)', s => Array.from({ length: ROWS }, (_, i) =>
+  `<div class="row" data-i="${i}" style="top:${i * 160}px;color:${i % 2 ? 'var(--navy)' : '#fff'}">${'כל יום · '.repeat(8)}</div>`).join(''),
+  (t, el, s) => {
+    const lt = t - s;
+    el.querySelectorAll('.row').forEach((r, i) => {
+      const order = [5, 6, 4, 7, 3, 8, 2, 9, 1, 10, 0, 11].indexOf(i);
+      const appear = .9 * Math.sqrt(order / ROWS); // מאיץ
+      const v = clamp((lt - appear) / .08);
+      const dist = (lt * lt * 900 + lt * 300) * (i % 2 ? 1 : -1); // מהירות עולה
+      r.style.opacity = v;
+      r.style.transform = `translateX(${(dist % 640) - 320}px) skewX(${clamp(lt) * (i % 2 ? -12 : 12)}deg)`;
+    });
+  });
+sc(8.75, 9.25, 'var(--navy)', s => `
+  <div class="w" style="top:820px;font-size:220px">כל יום<span style="display:inline-block;color:var(--sky);${A('pop', s + .1, .3)}">?</span></div>`);
 
 // 7 – הכירו את כלל BEHAVE (הטקסט ממשיך מעבר לחיתוך הרקע)
-sc(7.5, 8.25, 'var(--pale)', s => `
+sc(9.25, 10.0, 'var(--pale)', s => `
   <div class="w" style="top:700px;font-size:110px;color:var(--slate);${A('in', s, .3)}">הכירו את</div>
   <div class="w" style="top:860px;font-size:170px;color:var(--blue);${A('fromR', s + .2, .55)}">כלל BEHAVE</div>`);
-sc(8.25, 9.0, 'var(--navy)', s => `
+sc(10.0, 10.75, 'var(--navy)', s => `
   <div class="w" style="top:860px;font-size:170px;${A('push', s, .75, 'linear')}">כלל <span style="color:var(--sky)">BEHAVE</span></div>`);
 
-// 8 – נוסעים פחות → יכולים לשלם פחות (האותיות נופלות ומתחלפות)
-const fall = [...'נוסעים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? 1 : -1) * (20 + i * 9)}deg;${A('fallOut', 9.8 + i * .03, .4, 'ease-in')}">${c}</span>`).join('');
-const drop = [...'יכולים לשלם'].map((c, i) => c === ' ' ? ' ' : `<span class="ch" style="--r:${(i % 2 ? -1 : 1) * 25}deg;${A('dropIn', 10.0 + i * .035, .35)}">${c}</span>`).join('');
-sc(9.0, 11.0, 'var(--sky)', s => `
-  <div class="w" style="top:720px;font-size:200px;${A('in', s, .15)}">${fall}</div>
-  <div class="w" style="top:740px;font-size:150px;color:var(--navy)">${drop}</div>
-  <div class="w" style="top:960px;font-size:260px;${A('up', s + .3, .35)}">פחות</div>`);
+// 8 – המכונית נוסעת על הטקסט: מעיפה את "נוסעים" ומשאירה אחריה "יכולים לשלם"
+const CAR_W = 600, DRIVE0 = 11.0, DRIVE1 = 12.4;
+sc(10.75, 13.75, 'var(--sky)', s => `
+  <div class="w" id="w-old" style="top:720px;font-size:220px">${spans('נוסעים', 'o')}</div>
+  <div class="w" id="w-new" style="top:760px;font-size:150px;color:var(--navy)">${spans('יכולים לשלם', 'n')}</div>
+  <div class="road"></div>
+  <div class="carshadow"></div>
+  <div class="drivecar"><div style="transform:scaleX(-1)">${tpl('car', CAR_W)}</div></div>
+  <div class="w" style="top:1160px;font-size:270px;${A('up', s + .2, .35)}">פחות</div>`,
+  (t, el, s) => {
+    const car = el.querySelector('.drivecar'), sh = el.querySelector('.carshadow');
+    const x = lerp(1180, -CAR_W - 120, ease((t - DRIVE0) / (DRIVE1 - DRIVE0)) * .35 + clamp((t - DRIVE0) / (DRIVE1 - DRIVE0)) * .65);
+    car.style.transform = `translateX(${x}px) translateY(${Math.sin(t * 40) * 2}px)`;
+    sh.style.transform = `translateX(${x + 40}px)`;
+    car.querySelectorAll('.wheel').forEach(w => w.style.transform = `rotate(${-(1180 - x) * 1.1}deg)`);
+    if (!el._pos) { // מיקומי האותיות נמדדים פעם אחת, לפני טרנספורמציות
+      el._pos = [...el.querySelectorAll('.ch.o, .ch.n')].map(c => { const r = c.getBoundingClientRect(); return [c, r.left + r.width / 2]; });
+    }
+    el._pos.forEach(([c, cx]) => {
+      if (c.classList.contains('o')) { // החזית עוברת → האות עפה
+        const p = clamp((cx - x) / 160);
+        c.style.transform = `translate(${-80 * p}px, ${-320 * p}px) rotate(${-50 * p}deg)`;
+        c.style.opacity = 1 - p;
+      } else { // הזנב עובר → האות נוחתת
+        const q = ease((cx - (x + CAR_W)) / 170);
+        c.style.transform = `translateY(${-140 * (1 - q)}px) rotate(${(1 - q) * 25}deg)`;
+        c.style.opacity = q;
+      }
+    });
+  });
 
 // 9 – אפליקציה חכמה שמלווה את הנהיגה שלכם
-sc(11.0, 12.5, 'var(--ice)', s => `
+sc(13.75, 15.25, 'var(--ice)', s => `
   <div class="w" style="top:330px;font-size:130px;color:var(--blue);${A('in', s, .15)}">אפליקציה חכמה</div>
   <div class="w" style="top:500px;font-size:70px;color:var(--slate);font-weight:700;${A('up', s + .35, .3)}">שמלווה את הנהיגה שלכם</div>
   <div class="shadow" style="top:1500px;width:34%"></div>
@@ -181,29 +244,67 @@ sc(11.0, 12.5, 'var(--ice)', s => `
   <div class="obj" style="top:860px;margin-left:200px;${A('pop', s + .6, .4)}">${tpl('bt', 170)}</div>`);
 
 // 10 – משוב אחרי כל נסיעה
-sc(12.5, 14.0, 'var(--blue)', s => `
+sc(15.25, 16.75, 'var(--blue)', s => `
   <div class="w" style="top:330px;font-size:250px">${chars('משוב', s, .08, 'glow')}</div>
   <div class="w" style="top:610px;font-size:80px;color:var(--ice);font-weight:700;${A('up', s + .45, .35)}">אחרי כל נסיעה</div>
   <div class="shadow" style="top:1640px;width:34%"></div>
   <div class="obj" style="top:860px;${A('objUp', s + .3, .5)}">${tpl('phone', 400)}</div>`);
 
 // 11 – ליווי אישי 24/7
-sc(14.0, 15.0, 'var(--steel)', s => `
+sc(16.75, 17.75, 'var(--steel)', s => `
   <div class="w" style="top:620px;font-size:150px;${A('in', s, .15)}">ליווי אישי</div>
   <div class="w" style="top:840px;font-size:340px;color:var(--navy);direction:ltr;${A('pop', s + .3, .4)}">24/7</div>`);
 
-// 12 – וחיסכון של עד 33% בביטוח המקיף*
-sc(15.0, 17.0, 'var(--navy)', s => `
-  <div class="w" style="top:560px;font-size:110px;${A('in', s, .2)}">וחיסכון של עד</div>
-  <div class="w" style="top:720px;font-size:360px;color:var(--sky);direction:ltr;${A('pop', s + .15, .4)}"><span id="counter">33</span>%<span style="font-size:200px;vertical-align:top">*</span></div>
-  <div class="w" style="top:1140px;font-size:100px;${A('up', s + .6, .35)}">בביטוח המקיף</div>`);
+// 12 – המחיר מתכווץ: יורד בכל פעמה, קטן ונהיה דק
+const PRICES = [4800, 4400, 4000, 3650, 3350, 3200];
+sc(17.75, 20.0, 'var(--navy)', s => `
+  <div class="w" style="top:430px;font-size:100px;${A('in', s, .2)}">וחיסכון של עד</div>
+  <div class="w" id="price" style="top:900px;direction:ltr;color:#fff">₪<span class="num">4,800</span></div>
+  <div class="w" style="top:1700px;font-size:30px;font-weight:500;opacity:.6">*המחירים להמחשה בלבד</div>`,
+  (t, el, s) => {
+    const lt = t - s - .45, step = clamp(Math.floor(lt / .3), 0, PRICES.length - 1), ph = lt - step * .3;
+    const k = clamp(lt / (.3 * (PRICES.length - 1)));
+    const pr = el.querySelector('#price');
+    pr.style.fontSize = lerp(330, 170, ease(k)) + 'px';
+    pr.style.fontWeight = Math.round(lerp(900, 200, ease(k)));
+    pr.style.letterSpacing = lerp(0, 6, k) + 'px';
+    const bump = lt > 0 && step > 0 ? Math.max(0, 1 - ph / .12) : 0; // קפיצה קטנה בכל ירידה
+    pr.style.transform = `translateY(${bump * 30}px) scale(${1 - bump * .04})`;
+    el.querySelector('.num').textContent = PRICES[lt < 0 ? 0 : step].toLocaleString('en-US');
+    pr.style.color = step === PRICES.length - 1 ? 'var(--sky)' : '#fff';
+  });
 
-// 13 – עובדים / מהבית?
-sc(17.0, 17.6, 'var(--sky)', s => `<div class="w" style="top:860px;font-size:200px;${A('in', s, .12)}">עובדים</div>`);
-sc(17.6, 18.2, 'var(--mist)', s => `<div class="w" style="top:860px;font-size:200px;color:var(--navy);${A('in', s, .12)}">מהבית?</div>`);
+// 13 – ספידומטר טיפוגרפי: המחוג נעצר על 33%
+const R = 400, CX = 540, CY = 1080, MAX = 50;
+const ang = v => Math.PI * (1 - v / MAX);
+const pt = (v, r) => [CX + r * Math.cos(ang(v)), CY - r * Math.sin(ang(v))];
+const ticks = Array.from({ length: 11 }, (_, i) => { const v = i * 5, [x1, y1] = pt(v, R - 10), [x2, y2] = pt(v, R - (i % 2 ? 50 : 80)); return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#fff" stroke-width="${i % 2 ? 6 : 12}" stroke-linecap="round"/>`; }).join('')
+  + [0, 10, 20, 30, 40, 50].map(v => { const [x, y] = pt(v, R - 140); return `<text x="${x}" y="${y + 20}" text-anchor="middle" font-family="Heebo" font-weight="700" font-size="52" fill="#fff" opacity=".7">${v}</text>`; }).join('');
+sc(20.0, 22.0, 'var(--blue)', s => `
+  <svg style="position:absolute;inset:0" viewBox="0 0 1080 1920">
+    <path d="M${CX - R} ${CY} A${R} ${R} 0 0 1 ${CX + R} ${CY}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="44"/>
+    <path id="arc" d="M${CX - R} ${CY} A${R} ${R} 0 0 1 ${CX + R} ${CY}" fill="none" stroke="#00a3e0" stroke-width="44" stroke-dasharray="${Math.PI * R}" stroke-dashoffset="${Math.PI * R}"/>
+    ${ticks}
+    <g id="needle"><path d="M${CX} ${CY - 18} L${CX - R + 70} ${CY} L${CX} ${CY + 18} Z" fill="#fff"/><circle cx="${CX}" cy="${CY}" r="36" fill="#00205b" stroke="#fff" stroke-width="10"/></g>
+  </svg>
+  <div class="w" style="top:1200px;font-size:300px;direction:ltr"><span id="gv">0</span>%<span style="font-size:160px;vertical-align:top">*</span></div>
+  <div class="w" style="top:1540px;font-size:100px;${A('up', s + .9, .35)}">בביטוח המקיף</div>`,
+  (t, el, s) => {
+    const lt = t - s;
+    // מחוג: נזרק עד 46, חוזר ומתייצב על 33
+    let v = lt < .55 ? lerp(0, 46, ease(lt / .55)) : 33 + 13 * Math.exp(-(lt - .55) * 6) * Math.cos((lt - .55) * 9);
+    v = clamp(v, 0, MAX);
+    el.querySelector('#needle').setAttribute('transform', `rotate(${v / MAX * 180} ${CX} ${CY})`);
+    el.querySelector('#arc').setAttribute('stroke-dashoffset', Math.PI * R * (1 - v / MAX));
+    el.querySelector('#gv').textContent = Math.round(v);
+  });
 
-// 14 – מסך מפוצל: תנו גם לביטוח שלכם / לעבוד חכם יותר
-sc(18.2, 20.0, 'var(--blue)', s => `
+// 14 – עובדים / מהבית?
+sc(22.0, 22.6, 'var(--sky)', s => `<div class="w" style="top:860px;font-size:200px;${A('in', s, .12)}">עובדים</div>`);
+sc(22.6, 23.2, 'var(--mist)', s => `<div class="w" style="top:860px;font-size:200px;color:var(--navy);${A('in', s, .12)}">מהבית?</div>`);
+
+// 15 – מסך מפוצל: תנו גם לביטוח שלכם / לעבוד חכם יותר
+sc(23.2, 25.0, 'var(--blue)', s => `
   <div class="half" style="top:0;background:var(--blue);${A('slideDown', s, .3)}">
     <div class="w" style="top:520px;font-size:96px">תנו גם לביטוח שלכם</div>
   </div>
@@ -212,8 +313,8 @@ sc(18.2, 20.0, 'var(--blue)', s => `
     <div class="w" style="top:440px;font-size:150px;color:var(--sky);${A('up', s + 1.1, .35)}">יותר.</div>
   </div>`);
 
-// 15 – לוגו + סלוגן על לבן
-sc(20.0, T, '#ffffff', s => `
+// 16 – לוגו + סלוגן על לבן
+sc(25.0, T, '#ffffff', s => `
   <div class="w" style="top:780px;font-size:150px;color:var(--navy);${A('wipe', s + .1, .7)}">כלל <span style="color:var(--blue)">BEHAVE</span></div>
   <div class="w" style="top:990px;font-size:66px;color:var(--slate);font-weight:700;${A('up', s + .8, .4)}">נוסעים חכם. <span style="color:var(--sky)">משלמים בהתאם.</span></div>
   <div class="w" style="top:1700px;font-size:30px;color:var(--slate);font-weight:500;white-space:normal;padding:0 80px;line-height:1.4;${A('in', s + 1.2, .4)}">*שיעור החיסכון תלוי באיכות הנהיגה ובהיקף הנסועה. בכפוף לתנאי הפוליסה ולחיתום החברה.</div>`);
@@ -225,15 +326,13 @@ S.forEach(o => {
   d.className = 'sc'; d.style.background = o.bg; d.innerHTML = o.html;
   stage.appendChild(d); o.el = d;
 });
-// גלגלים מסתובבים בסצנת "הרכב" בלבד
-S[1].el.querySelectorAll('.wheel').forEach(w => w.style.animation = 'spinWheel .55s cubic-bezier(.2,.8,.2,1) 1.5s both');
+// גלגלים מסתובבים בסצנת "הרכב שלכם"
+S[1].el.querySelectorAll('.wheel').forEach(w => w.style.animation = 'spinWheel .55s cubic-bezier(.2,.8,.2,1) 2.0s both');
 
-const counter = document.getElementById('counter');
 window.__setTime = t => {
   S.forEach(o => o.el.style.display = (t >= o.s && t < o.e) ? 'block' : 'none');
   document.getAnimations().forEach(a => { a.pause(); a.currentTime = t * 1000; });
-  const p = Math.min(1, Math.max(0, (t - 15.2) / 1.0));
-  counter.textContent = Math.round(33 * (1 - Math.pow(1 - p, 3)));
+  S.forEach(o => { if (o.upd && t >= o.s && t < o.e) o.upd(t, o.el, o.s); });
 };
 window.__duration = T;
 if (!navigator.webdriver) {
