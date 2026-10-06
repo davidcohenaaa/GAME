@@ -60,6 +60,7 @@
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
   @keyframes slideDown{from{transform:translateY(-100%)}to{transform:none}}
   @keyframes wipe{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+  @keyframes drawP{0%{stroke-dashoffset:1;opacity:0}12%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
   @keyframes glow{from{opacity:.2}to{opacity:1}}
   @keyframes dropIn{0%{transform:translateY(-140px) rotate(var(--r));opacity:0}100%{transform:none;opacity:1}}
 </style>
@@ -212,9 +213,18 @@ sc(3.0, 5.0, 'var(--ink)', s => `
 sc(5.0, 5.5, 'var(--navy)', s => `<div class="w l" style="top:880px;font-size:230px;color:var(--cream);${A('in', s, .12)}">אז</div>`);
 sc(5.5, 6.0, 'var(--navy)', s => `<div class="w l" style="top:880px;font-size:230px;color:var(--cream);${A('in', s, .12)}">למה</div>`);
 
-// 5 – לשלם (סילואטת עציץ חיסכון ברקע, ירוק + מנטה)
-sc(6.0, 7.0, 'var(--green)', s => `
-  ${sil('plant', 'var(--mint)', 160, 300, 760, `${A('silIn', s, .5)}`)}
+// 5 – לשלם (אייקון קו "inky" של מטבעות, ירוק על טינט מנטה 60%)
+const coinPaths = [
+  'M70 40 Q70 27 110 27 Q150 27 150 40 Q150 52 118 53', 'M100 53 Q70 52 70 40',
+  'M70 42 V138', 'M150 42 V138',
+  'M70 74 Q72 86 110 87 Q148 86 150 74', 'M70 106 Q72 118 110 119 Q148 118 150 106', 'M70 138 Q72 150 110 151 Q148 150 150 138',
+];
+sc(6.0, 7.0, '#DFFFDF', s => `
+  <svg class="icon" viewBox="10 15 160 175" style="position:absolute;left:250px;top:250px;width:580px;color:var(--green);stroke-width:9;${A('pop', s, .4)}">
+    ${coinPaths.map((d, i) => `<path d="${d}" pathLength="1" stroke-dasharray="1 1" style="${A('drawP', s + .05 + i * .04, .35)}"/>`).join('')}
+    <circle cx="58" cy="138" r="34" fill="#DFFFDF" stroke="none"/>
+    <path d="M79.9 112 A34 34 0 1 0 89.9 126.4" pathLength="1" stroke-dasharray="1 1" style="${A('drawP', s + .3, .35)}"/>
+  </svg>
   <div class="w l" style="top:900px;font-size:260px;color:var(--ink);${A('in', s + .1, .15)}">לשלם</div>`);
 
 // 6 – כמו מי שנוסע / "כל יום" בבועיות שמתרבות ומסתחררות
