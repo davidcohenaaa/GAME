@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>כלל BEHAVE – לפי ספר המותג</title>
+<!-- נבנה ל-brand.html בעזרת build_brand.py (מזריק את קבצי ה-SVG מ-brand-assets) -->
+<style>
+  /* Polin – גופן המותג (תת-גופנים שחולצו מספר המותג, לתרגיל/המחשה בלבד; brand-fonts לא נשמר ב-git) */
+  @font-face{font-family:'PolinX';font-weight:100 900;src:url(brand-fonts/Polin-Extralight.otf)}
+  @font-face{font-family:'PolinL';font-weight:100 900;src:url(brand-fonts/Polin-Light.otf)}
+  @font-face{font-family:'PolinR';font-weight:100 900;src:url(brand-fonts/Polin-Regular.otf)}
+  @font-face{font-family:'PolinM';font-weight:100 900;src:url(brand-fonts/Polin-Medium.otf)}
+  @font-face{font-family:'PolinS';font-weight:100 900;src:url(brand-fonts/Polin-Semibold.otf)}
+  /* גיבוי לתווים שחסרים בתת-הגופן (למשל "?") */
+  @font-face{font-family:'Heebo';font-weight:100 900;src:url(fonts/heebo-hebrew.woff2) format('woff2');unicode-range:U+0590-05FF,U+20AA}
+  @font-face{font-family:'Heebo';font-weight:100 900;src:url(fonts/heebo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F}
+
+  /* פלטת ספר המותג */
+  :root{
+    --cream:#FBF2EB; --ink:#262B3A; --navy:#293768; --digital:#5A7BEC; --sky:#D2E1FF;
+    --orange:#FF8C64; --pink:#FFBDBD; --green:#59D189; --mint:#B0FFAE; --lime:#F8FFD2;
+    --symbol:#507CF3;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:var(--cream)}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+  .sc{position:absolute;inset:0;display:none;overflow:hidden}
+  .w{position:absolute;left:0;right:0;text-align:center;line-height:1.05;white-space:nowrap}
+  .x{font-family:'PolinX','PolinR','Heebo';font-weight:200}
+  .l{font-family:'PolinL','PolinR','Heebo';font-weight:300}
+  .r{font-family:'PolinR','Heebo';font-weight:400}
+  .m{font-family:'PolinM','PolinR','Heebo';font-weight:500}
+  .s{font-family:'PolinS','PolinR','Heebo';font-weight:600}
+  .ch{display:inline-block}
+  /* בועית: מילוי מלא או קו מתאר – לעולם לא שניהם */
+  .pill{display:inline-block;border-radius:999px;padding:.06em .42em .16em;border:.06em solid currentColor;line-height:1;vertical-align:middle}
+  .pill.f{border-color:transparent}
+  .gap{display:inline-block;width:.18em}
+  .sil{position:absolute}
+  .sil svg{width:100%;height:auto;display:block;overflow:visible}
+  .half{position:absolute;left:0;right:0;height:50%;overflow:hidden}
+  .icon{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+  #lineLayer{position:absolute;inset:0;width:1080px;height:1920px;pointer-events:none;z-index:5}
+  .psign{position:absolute;top:300px;right:110px}
+  .days{position:absolute;top:1250px;left:0;right:0;display:flex;justify-content:center;gap:22px;direction:rtl}
+  .day{font-size:64px;color:var(--cream)}
+  .day.on{background:var(--sky);color:var(--ink);border-color:transparent}
+  .day.office{background:var(--orange);color:var(--ink);border-color:transparent}
+  .row{position:absolute;left:-500px;right:-500px;text-align:center;white-space:nowrap;font-size:104px;opacity:0}
+  .row .pill{margin:0 14px}
+  .mover{position:absolute;left:0}
+
+  @keyframes in{from{opacity:0}to{opacity:1}}
+  @keyframes up{from{opacity:0;transform:translateY(70px)}to{opacity:1;transform:none}}
+  @keyframes pop{0%{opacity:0;transform:scale(.6)}60%{opacity:1;transform:scale(1.05)}100%{transform:scale(1)}}
+  @keyframes push{from{transform:scale(1)}to{transform:scale(1.06)}}
+  @keyframes fromR{from{transform:translateX(900px)}to{transform:none}}
+  @keyframes silIn{from{opacity:0;transform:translateY(160px) rotate(var(--r0,0deg))}to{opacity:1;transform:rotate(var(--r1,0deg))}}
+  @keyframes silDrift{from{transform:rotate(var(--r1,0deg)) scale(1)}to{transform:rotate(var(--r1,0deg)) scale(1.06)}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes slideDown{from{transform:translateY(-100%)}to{transform:none}}
+  @keyframes wipe{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+  @keyframes glow{from{opacity:.2}to{opacity:1}}
+  @keyframes dropIn{0%{transform:translateY(-140px) rotate(var(--r));opacity:0}100%{transform:none;opacity:1}}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<template id="carkey"><!--ASSET:carkey--></template>
+<template id="mug"><!--ASSET:mug--></template>
+<template id="laptop"><!--ASSET:laptop--></template>
+<template id="plant"><!--ASSET:plant--></template>
+<template id="clock"><!--ASSET:clock--></template>
+<template id="pillow"><!--ASSET:pillow--></template>
+<template id="behave"><!--ASSET:behave--></template>
+<template id="logoline"><!--ASSET:logo-line--></template>
+<!-- סילואטת רכב בגזירה ידנית (לאופציה B) – צבע אחד, בלי פרטים -->
+<template id="car">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="20 30 580 220"><path fill="currentColor" fill-rule="evenodd" d="M31 189 L27 151 Q29 127 53 121 L148 103 L207 54 Q221 41 247 38 L390 35 Q419 37 434 53 L497 107 L561 117 Q588 124 589 151 L592 187 Q590 199 577 200 L541 201 Q540 247 496 247 Q454 246 451 201 L192 203 Q190 248 146 248 Q103 246 101 202 L45 201 Q32 200 31 189 Z M222 61 L247 51 L299 50 L301 99 L178 104 Z M317 50 L387 49 Q405 51 415 63 L455 99 L318 100 Z"/></svg>
+</template>
+
+<script>
+const OPT = new URLSearchParams(location.search).get('car') === 'car' ? 'car' : 'key'; // key = מפתח רכב, car = סילואטת רכב
+const T = 26.0;
+const tpl = id => document.getElementById(id).innerHTML;
+const A = (name, at, dur = .45, ease = 'cubic-bezier(.2,.8,.2,1)') => `animation:${name} ${dur}s ${ease} ${at}s both;`;
+const chars = (txt, at, step, name) => [...txt].map((c, i) => c === ' ' ? ' ' : `<span class="ch" style="${A(name, at + i * step, .35)}">${c}</span>`).join('');
+const spans = (txt, cls) => [...txt].map(c => c === ' ' ? '<span class="ch">&nbsp;</span>' : `<span class="ch ${cls}">${c}</span>`).join('');
+const pill = (txt, cls = '', style = '') => `<span class="pill ${cls}" style="${style}">${txt}</span>`;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIO = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const lerp = (a, b, x) => a + (b - a) * x;
+const sil = (id, color, x, y, w, extra = '') => `<div class="sil" style="left:${x}px;top:${y}px;width:${w}px;color:${color};${extra}">${tpl(id)}</div>`;
+
+// לוגו המוצר Clal Behave + בועית "ביטוח רכב" (הבועית מתוך ספר המותג, הטקסט בתוכה ב-Polin)
+const BV = [185.8, 250.6, 439.7, 222.3], BP = [192, 429, 152, 42]; // viewBox, ותיבת הבועית
+function behave(w, color, { pillFill = null, pillText = 'ביטוח רכב', hidePill = false, id = '' } = {}) {
+  const k = w / BV[2], h = BV[3] * k;
+  const px = (BP[0] - BV[0]) * k, py = (BP[1] - BV[1]) * k, pw = BP[2] * k, ph = BP[3] * k;
+  const svg = tpl('behave').replace('<svg ', `<svg style="width:${w}px;height:${h}px;display:block" `);
+  const fill = pillFill ? `<div style="position:absolute;left:${px}px;top:${py}px;width:${pw}px;height:${ph}px;border-radius:999px;background:${pillFill}"></div>` : '';
+  return `<div ${id ? `id="${id}"` : ''} class="behave${hidePill ? ' nopill' : ''}${pillFill ? ' nopill' : ''}" style="position:relative;width:${w}px;height:${h}px;color:${color}">${svg}${fill}
+    <div class="r pilltxt" style="position:absolute;left:${px}px;top:${py}px;width:${pw}px;height:${ph}px;display:flex;align-items:center;justify-content:center;font-size:${ph * .56}px;color:${pillFill ? 'var(--cream)' : color};direction:rtl">${pillText}</div></div>`;
+}
+document.head.insertAdjacentHTML('beforeend', '<style>.behave.nopill svg path:last-child{display:none}</style>');
+
+// ---------- הקו הרציף ----------
+const N = 260;
+const resample = pts => {
+  const L = [0];
+  for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const tot = L[L.length - 1], out = [];
+  for (let k = 0, j = 1; k < N; k++) {
+    const d = tot * k / (N - 1);
+    while (j < L.length - 1 && L[j] < d) j++;
+    const f = (d - L[j - 1]) / ((L[j] - L[j - 1]) || 1);
+    out.push([lerp(pts[j - 1][0], pts[j][0], f), lerp(pts[j - 1][1], pts[j][1], f)]);
+  }
+  return out;
+};
+const line = (x1, x2, y) => resample([[x1, y], [x2, y]]);
+const rrect = (x1, y1, x2, y2, r) => { // מלבן מעוגל (גם בועית כש-r = חצי גובה), מתחיל מאמצע הצלע התחתונה
+  const p = [[(x1 + x2) / 2, y2]], arc = (cx, cy, a0) => { for (let i = 0; i <= 12; i++) { const a = a0 + Math.PI / 2 * i / 12; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } };
+  p.push([x1 + r, y2]); arc(x1 + r, y2 - r, Math.PI / 2); p.push([x1, y1 + r]); arc(x1 + r, y1 + r, Math.PI);
+  p.push([x2 - r, y1]); arc(x2 - r, y1 + r, -Math.PI / 2); p.push([x2, y2 - r]); arc(x2 - r, y2 - r, 0); p.push([(x1 + x2) / 2, y2]);
+  return resample(p);
+};
+const GR = 400, GCX = 540, GCY = 1080;
+const gaugeArc = () => resample(Array.from({ length: 80 }, (_, i) => { const a = Math.PI * (1 - i / 79); return [GCX + GR * Math.cos(a), GCY - GR * Math.sin(a)]; }));
+const SH = {
+  house: resample([[880, 1220], [200, 1220], [200, 780], [540, 440], [880, 780], [880, 1220]]),
+  ground: line(-60, 1140, 1300),
+  bay: resample([[170, 1180], [170, 560], [910, 560], [910, 1180]]),
+  ulAz: line(400, 680, 1130),
+  ulPay: line(200, 880, 1180),
+  divider: line(140, 940, 905),
+  ulBrand: line(160, 920, 1150),
+  road: line(-60, 1140, 1046),
+  phoneA: rrect(340, 760, 740, 1500, 70),
+  phoneB: rrect(340, 860, 740, 1600, 70),
+  ul247: line(220, 860, 1230),
+  gauge: gaugeArc(),
+  ulWork: line(260, 820, 1160),
+  split: line(-60, 1140, 960),
+  pill: rrect(400, 900, 680, 960, 30), // מתעדכן לפי מיקום הבועית בלוגו
+};
+const K = [
+  [0.0, 'house', '#293768', 1, 0], [0.7, 'house', '#293768', 1, 1], [1.7, 'house', '#293768', 1, 1],
+  [2.15, 'ground', '#262B3A', 1, 1], [3.0, 'ground', '#262B3A', 1, 1], [3.05, 'ground', '#FBF2EB', 1, 1],
+  [3.45, 'bay', '#FBF2EB', 1, 1], [4.85, 'bay', '#FBF2EB', 1, 1],
+  [5.15, 'ulAz', '#FBF2EB', 1, 1], [6.0, 'ulAz', '#FBF2EB', 1, 1], [6.05, 'ulAz', '#262B3A', 1, 1],
+  [6.3, 'ulPay', '#262B3A', 1, 1], [7.0, 'ulPay', '#262B3A', 1, 1], [7.05, 'ulPay', '#293768', 1, 1],
+  [7.25, 'divider', '#293768', 1, 1], [7.55, 'divider', '#293768', 1, 1],
+  [7.65, 'divider', '#293768', 0, 1], [9.2, 'ulBrand', '#262B3A', 0, 1],
+  [9.6, 'ulBrand', '#262B3A', 1, 1], [10.0, 'ulBrand', '#262B3A', 1, 1], [10.05, 'ulBrand', '#FBF2EB', 1, 1], [10.75, 'ulBrand', '#FBF2EB', 1, 1], [10.8, 'ulBrand', '#262B3A', 1, 1],
+  [11.0, 'road', '#262B3A', 1, 1], [13.75, 'road', '#262B3A', 1, 1],
+  [14.15, 'phoneA', '#5A7BEC', 1, 1], [15.25, 'phoneA', '#5A7BEC', 1, 1], [15.3, 'phoneA', '#FBF2EB', 1, 1],
+  [15.6, 'phoneB', '#FBF2EB', 1, 1], [16.75, 'phoneB', '#FBF2EB', 1, 1], [16.8, 'phoneB', '#262B3A', 1, 1],
+  [17.1, 'ul247', '#262B3A', 1, 1], [17.75, 'ul247', '#262B3A', 1, 1], [17.8, 'ul247', '#FBF2EB', 1, 1],
+  [18.2, 'gauge', '#FBF2EB', 1, 1], [20.5, 'gauge', '#FBF2EB', 1, 1], [20.55, 'gauge', '#262B3A', 1, 1],
+  [20.8, 'ulWork', '#262B3A', 1, 1], [21.7, 'ulWork', '#262B3A', 1, 1], [21.75, 'ulWork', '#FBF2EB', 1, 1],
+  [22.0, 'split', '#FBF2EB', 1, 1], [23.5, 'split', '#FBF2EB', 1, 1], [23.55, 'split', '#262B3A', 1, 1],
+  [24.0, 'pill', '#262B3A', 1, 1], [T, 'pill', '#262B3A', 1, 1],
+];
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, f) => { const x = hex(a), y = hex(b); return `rgb(${x.map((v, i) => Math.round(lerp(v, y[i], f))).join(',')})`; };
+function drawLine(t) {
+  let i = 0; while (i < K.length - 2 && K[i + 1][0] <= t) i++;
+  const [t0, s0, c0, o0, d0] = K[i], [t1, s1, c1, o1, d1] = K[i + 1];
+  const f = easeIO((t - t0) / ((t1 - t0) || 1)), a = SH[s0], b = SH[s1];
+  const el = document.getElementById('gline');
+  el.setAttribute('points', a.map((p, k) => `${lerp(p[0], b[k][0], f).toFixed(1)},${lerp(p[1], b[k][1], f).toFixed(1)}`).join(' '));
+  el.setAttribute('stroke', f < .5 ? c0 : c1);
+  el.setAttribute('opacity', lerp(o0, o1, f));
+  el.setAttribute('stroke-dashoffset', 1 - lerp(d0, d1, f));
+}
+
+// ---------- סצנות ----------
+const S = [];
+const sc = (s, e, bg, html, upd) => S.push({ s, e, bg, html: html(s), upd });
+
+// 1 – עובדים (נופלים לתוך הבית) / מהבית ? (בועיות; סימן פיסוק בבועית נפרדת)
+sc(0, 2.0, 'var(--sky)', s => `
+  ${sil('mug', 'var(--digital)', 470, 1080, 140, A('pop', s + 1.0, .4))}
+  <div class="w l" style="top:880px;font-size:165px;color:var(--navy)">${[...'עובדים'].map((c, i) => `<span class="ch" style="--r:${(i % 2 ? -1 : 1) * 16}deg;${A('dropIn', s + .45 + i * .07, .4)}">${c}</span>`).join('')}</div>
+  <div class="w r" style="top:1330px;font-size:130px;color:var(--navy);${A('up', s + 1.2, .35)}">${pill('מהבית')}<span class="gap"></span>${pill('?')}</div>`);
+
+// 2 – הרכב שלכם
+sc(2.0, 3.0, 'var(--pink)', s => OPT === 'key' ? `
+  ${sil('carkey', 'var(--orange)', 300, 360, 520, `--r0:-20deg;--r1:-8deg;${A('silIn', s, .55)}`)}
+  <div class="w l" style="top:980px;font-size:280px;color:var(--ink);${A('in', s + .05, .2)}">הרכב</div>
+  <div class="w r" style="top:1370px;font-size:120px;color:var(--ink);${A('up', s + .45, .3)}">${pill('שלכם')}</div>` : `
+  <div class="w l" style="top:760px;font-size:280px;color:var(--ink);${A('in', s, .2)}">הרכב</div>
+  <div class="mover" style="top:1017px;width:760px;color:var(--orange);${A('fromR', s, .6)};left:160px">${tpl('car')}</div>
+  <div class="w r" style="top:1370px;font-size:120px;color:var(--ink);${A('up', s + .45, .3)}">${pill('שלכם')}</div>`);
+
+// 3 – "חונה" בתוך משבצת החניה, והימים חולפים
+const days = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳'];
+sc(3.0, 5.0, 'var(--ink)', s => `
+  <div class="psign s" style="font-size:110px;color:var(--ink);${A('pop', s + .3, .35)}">${pill('P', 'f', 'background:var(--digital);color:var(--cream);direction:ltr')}</div>
+  <div class="w l" style="top:740px;font-size:270px;color:var(--cream);${A('in', s + .3, .2)}">חונה</div>
+  <div class="days r">${days.map((d, i) => `<span class="pill day" data-i="${i}">${d}</span>`).join('')}</div>
+  <div class="w l" style="top:1500px;font-size:100px;color:var(--cream);${A('up', s + 1.4, .35)}">רוב השבוע<span class="gap"></span><span class="r">${pill('?')}</span></div>`,
+  (t, el, s) => el.querySelectorAll('.day').forEach((d, i) => {
+    const on = t >= s + .55 + i * .22;
+    d.classList.toggle('on', on && i !== 1); d.classList.toggle('office', on && i === 1); // יום אחד במשרד
+  }));
+
+// 4 – אז / למה
+sc(5.0, 5.5, 'var(--navy)', s => `<div class="w l" style="top:880px;font-size:230px;color:var(--cream);${A('in', s, .12)}">אז</div>`);
+sc(5.5, 6.0, 'var(--navy)', s => `<div class="w l" style="top:880px;font-size:230px;color:var(--cream);${A('in', s, .12)}">למה</div>`);
+
+// 5 – לשלם (סילואטת עציץ חיסכון ברקע, ירוק + מנטה)
+sc(6.0, 7.0, 'var(--green)', s => `
+  ${sil('plant', 'var(--mint)', 160, 300, 760, `${A('silIn', s, .5)}`)}
+  <div class="w l" style="top:900px;font-size:260px;color:var(--ink);${A('in', s + .1, .15)}">לשלם</div>`);
+
+// 6 – כמו מי שנוסע / "כל יום" בבועיות שמתרבות ומסתחררות
+sc(7.0, 7.6, 'var(--sky)', s => `
+  <div class="w l" style="top:700px;font-size:170px;color:var(--navy);${A('in', s, .12)}">כמו מי</div>
+  <div class="w s" style="top:930px;font-size:170px;color:var(--navy);${A('up', s + .2, .25)}">שנוסע</div>`);
+const ROWS = 12;
+sc(7.6, 8.75, 'var(--digital)', s => Array.from({ length: ROWS }, (_, i) =>
+  `<div class="row r" data-i="${i}" style="top:${i * 160 + 6}px">${Array.from({ length: 8 }, (_, j) => (i + j) % 2
+    ? pill('כל יום', 'f', 'background:var(--sky);color:var(--navy)') : pill('כל יום', '', 'color:var(--cream)')).join('')}</div>`).join(''),
+  (t, el, s) => {
+    const lt = t - s;
+    el.querySelectorAll('.row').forEach((r, i) => {
+      const order = [5, 6, 4, 7, 3, 8, 2, 9, 1, 10, 0, 11].indexOf(i);
+      const dist = (lt * lt * 900 + lt * 300) * (i % 2 ? 1 : -1);
+      r.style.opacity = clamp((lt - .9 * Math.sqrt(order / ROWS)) / .08);
+      r.style.transform = `translateX(${(dist % 760) - 380}px)`;
+    });
+  });
+sc(8.75, 9.25, 'var(--navy)', s => `
+  <div class="w l" style="top:840px;font-size:200px;color:var(--cream)">כל יום<span class="gap"></span><span class="r" style="display:inline-block;${A('pop', s + .1, .3)}">${pill('?', 'f', 'background:var(--digital);color:var(--cream)')}</span></div>`);
+
+// 7 – הכירו את Clal Behave (הלוגו ממשיך מעבר לחיתוך הרקע)
+sc(9.25, 10.0, 'var(--cream)', s => `
+  <div class="w l" style="top:600px;font-size:110px;color:var(--navy);${A('in', s, .3)}">הכירו את</div>
+  <div style="position:absolute;left:220px;top:800px;${A('fromR', s + .2, .55)}">${behave(640, 'var(--ink)', { hidePill: true, pillText: '' })}</div>`);
+sc(10.0, 10.75, 'var(--ink)', s => `
+  <div style="position:absolute;left:220px;top:800px;${A('push', s, .75, 'linear')};transform-origin:50% 50%">${behave(640, 'var(--cream)')}</div>`);
+
+// 8 – נוסע על הקו: מעיף את "נוסעים" ומשאיר אחריו "יכולים לשלם"
+const MW = OPT === 'key' ? 420 : 560, DRIVE0 = 11.0, DRIVE1 = 12.4;
+sc(10.75, 13.75, 'var(--pink)', s => `
+  <div class="w l" style="top:740px;font-size:220px;color:var(--ink)">${spans('נוסעים', 'o')}</div>
+  <div class="w r" style="top:790px;font-size:150px;color:var(--ink)">${spans('יכולים לשלם', 'n')}</div>
+  <div class="mover drv" style="width:${MW}px;color:var(--orange)">${OPT === 'key'
+    ? `<div style="transform:rotate(-122deg);transform-origin:50% 50%;width:250px;margin:0 auto">${tpl('carkey')}</div>`
+    : tpl('car')}</div>
+  <div class="w s" style="top:1160px;font-size:270px;color:var(--ink);${A('up', s + .2, .35)}">פחות</div>`,
+  (t, el, s) => {
+    const car = el.querySelector('.drv');
+    const u = (t - DRIVE0) / (DRIVE1 - DRIVE0);
+    const x = lerp(1180, -MW - 120, ease(u) * .35 + clamp(u) * .65);
+    if (!el._ext) { // קצוות הסילואטה ביחס ל-mover (לפני תזוזה)
+      car.style.transform = 'none'; car.style.top = '0px';
+      const c = car.getBoundingClientRect(), path = car.querySelector('path'), m = path.getScreenCTM(), L = path.getTotalLength();
+      let x0 = 1e9, x1 = -1e9, y1 = -1e9; // דוגמים את קו המתאר עצמו (לא תיבת גבול מסובבת)
+      for (let i = 0; i <= 400; i++) { const q = path.getPointAtLength(L * i / 400), X = m.a * q.x + m.c * q.y + m.e, Y = m.b * q.x + m.d * q.y + m.f; x0 = Math.min(x0, X); x1 = Math.max(x1, X); y1 = Math.max(y1, Y); }
+      el._ext = [x0 - c.left, x1 - c.left, y1 - c.top];
+    }
+    const [fx, rx, by] = el._ext;
+    car.style.top = (1046 - by + 4) + 'px';
+    car.style.transform = `translateX(${x}px) translateY(${Math.sin(t * 40) * 2}px)`;
+    if (!el._pos) el._pos = [...el.querySelectorAll('.ch.o, .ch.n')].map(c => { const r = c.getBoundingClientRect(); return [c, r.left + r.width / 2]; });
+    el._pos.forEach(([c, cx]) => {
+      if (c.classList.contains('o')) { const p = clamp((cx - (x + fx)) / 160); c.style.transform = `translate(${-80 * p}px,${-320 * p}px) rotate(${-50 * p}deg)`; c.style.opacity = 1 - p; }
+      else { const q = ease((cx - (x + rx)) / 170); c.style.transform = `translateY(${-140 * (1 - q)}px) rotate(${(1 - q) * 25}deg)`; c.style.opacity = q; }
+    });
+  });
+
+// 9 – אפליקציה חכמה (הקו הופך לטלפון, אייקון בלוטות׳ בקו "inky")
+sc(13.75, 15.25, 'var(--cream)', s => `
+  <div class="w l" style="top:330px;font-size:130px;color:var(--navy);${A('in', s, .15)}">אפליקציה חכמה</div>
+  <div class="w r" style="top:510px;font-size:62px;color:var(--ink);${A('up', s + .35, .3)}">שמלווה את הנהיגה שלכם</div>
+  <svg class="icon" viewBox="0 0 100 100" style="position:absolute;left:440px;top:1030px;width:200px;color:var(--digital);stroke-width:7;${A('pop', s + .55, .4)}">
+    <path d="M30 31 L70 68 Q71 70 69 72 L51 89 L50 11 L68 28 Q70 30 68 32 L31 70"/></svg>`);
+
+// 10 – משוב אחרי כל נסיעה (ציון בתוך הטלפון)
+sc(15.25, 16.75, 'var(--navy)', s => `
+  <div class="w l" style="top:330px;font-size:240px;color:var(--cream)">${chars('משוב', s, .08, 'glow')}</div>
+  <div class="w r" style="top:620px;font-size:76px;color:var(--sky);${A('up', s + .45, .35)}">אחרי כל נסיעה</div>
+  <div class="w x" style="top:1070px;font-size:300px;color:var(--cream);direction:ltr;${A('pop', s + .4, .4)}">92</div>
+  <svg class="icon" viewBox="0 0 100 100" style="position:absolute;left:480px;top:1420px;width:120px;color:var(--mint);stroke-width:7;${A('pop', s + .7, .35)}">
+    <path d="M50 8 Q90 9 92 50 Q91 90 50 92 Q9 91 8 51 Q10 10 50 8"/><path d="M30 52 L44 65 L71 36"/></svg>`);
+
+// 11 – ליווי אישי 24/7 (שעון מעורר ברקע, ירוק + מנטה)
+sc(16.75, 17.75, 'var(--green)', s => `
+  ${sil('clock', 'var(--mint)', 230, 380, 620, A('silIn', s, .5))}
+  <div class="w l" style="top:640px;font-size:140px;color:var(--ink);${A('in', s, .15)}">ליווי אישי</div>
+  <div class="w x" style="top:880px;font-size:330px;color:var(--ink);direction:ltr;${A('pop', s + .25, .4)}">24/7</div>`);
+
+// 12 – ספידומטר: מחיר הביטוח יורד ב-33%
+const pt = (v, r) => { const a = Math.PI * (1 - v / 100); return [GCX + r * Math.cos(a), GCY - r * Math.sin(a)]; };
+const arcD = (v0, v1, r) => { const [x0, y0] = pt(v0, r), [x1, y1] = pt(v1, r); return `M${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1}`; };
+const ticks = Array.from({ length: 11 }, (_, i) => { const [x1, y1] = pt(i * 10, GR - 34), [x2, y2] = pt(i * 10, GR - (i % 5 ? 64 : 92)); return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#D2E1FF" stroke-width="${i % 5 ? 5 : 9}" stroke-linecap="round"/>`; }).join('');
+sc(17.75, 20.5, 'var(--ink)', s => `
+  <div class="w l" style="top:330px;font-size:110px;color:var(--cream);${A('in', s + .1, .25)}">וחיסכון של עד</div>
+  <svg style="position:absolute;inset:0" viewBox="0 0 1080 1920">
+    <g style="${A('in', s + .35, .3)}">${ticks}
+      <text x="${GCX}" y="${GCY + 100}" text-anchor="middle" font-family="PolinR, Heebo" font-size="44" fill="#D2E1FF">מחיר הביטוח</text>
+      <text x="${GCX - GR}" y="${GCY + 70}" text-anchor="middle" font-family="PolinR, Heebo" font-size="40" fill="#D2E1FF">0</text>
+      <text x="${GCX + GR}" y="${GCY + 70}" text-anchor="middle" font-family="PolinR, Heebo" font-size="40" fill="#D2E1FF">100%</text>
+    </g>
+    <path id="gFill" fill="none" stroke="#5A7BEC" stroke-width="56"/>
+    <path id="gSave" fill="none" stroke="#FF8C64" stroke-width="56"/>
+    <g id="needle" style="${A('in', s + .45, .2)}"><path d="M${GCX} ${GCY - 16} L${GCX - GR + 60} ${GCY} L${GCX} ${GCY + 16} Z" fill="#FBF2EB"/><circle cx="${GCX}" cy="${GCY}" r="34" fill="#5A7BEC"/></g>
+  </svg>
+  <div class="w l" style="top:1200px;font-size:300px;color:var(--orange);direction:ltr"><span id="gv">0</span>%<span class="r" style="font-size:150px;vertical-align:top">*</span></div>
+  <div class="w r" style="top:1540px;font-size:90px;color:var(--cream);${A('up', s + 1.6, .35)}">${pill('בביטוח המקיף')}</div>`,
+  (t, el, s) => {
+    const lt = t - s;
+    let v = lt < .9 ? lerp(0, 100, ease((lt - .45) / .45)) : 67 + 33 * Math.exp(-(lt - .9) * 4.5) * Math.cos((lt - .9) * 7);
+    v = clamp(v, 0, 100);
+    el.querySelector('#needle').setAttribute('transform', `rotate(${v / 100 * 180} ${GCX} ${GCY})`);
+    el.querySelector('#gFill').setAttribute('d', arcD(.01, Math.max(.02, v), GR));
+    el.querySelector('#gFill').setAttribute('opacity', clamp((lt - .45) / .2));
+    const saved = lt > .9 ? Math.max(0, 100 - v) : 0;
+    el.querySelector('#gSave').setAttribute('d', saved > .5 ? arcD(v, 100, GR) : '');
+    el.querySelector('#gv').textContent = Math.round(clamp(saved, 0, 33));
+  });
+
+// 13 – עובדים / מהבית ?
+sc(20.5, 21.1, 'var(--orange)', s => `<div class="w l" style="top:880px;font-size:210px;color:var(--ink);${A('in', s, .12)}">עובדים</div>`);
+sc(21.1, 21.7, 'var(--pink)', s => `<div class="w l" style="top:880px;font-size:210px;color:var(--ink);${A('in', s, .12)}">מהבית<span class="gap"></span><span class="r">${pill('?')}</span></div>`);
+
+// 14 – מסך מפוצל (הקו הוא קו החיתוך) + סילואטת לפטופ
+sc(21.7, 23.5, 'var(--navy)', s => `
+  <div class="half" style="top:0;background:var(--navy);${A('slideDown', s, .3)}">
+    <div class="w l" style="top:560px;font-size:96px;color:var(--cream)">תנו גם לביטוח שלכם</div>
+  </div>
+  <div class="half" style="top:50%;background:var(--sky);${A('slideUp', s + .35, .35)}">
+    ${sil('laptop', 'var(--digital)', 400, 640, 280, A('pop', s + .9, .4))}
+    <div class="w s" style="top:230px;font-size:150px;color:var(--navy)">${chars('לעבוד חכם', s + .6, .05, 'glow')}</div>
+    <div class="w l" style="top:420px;font-size:150px;color:var(--navy);${A('up', s + 1.1, .35)}">יותר.</div>
+  </div>`);
+
+// 15 – לוגו Clal Behave (הקו נסגר לבועית "ביטוח רכב") + לוגו כלל ביטוח ופיננסים
+sc(23.5, T, 'var(--cream)', s => `
+  <div style="position:absolute;left:190px;top:640px;${A('wipe', s + .1, .6)}">${behave(700, 'var(--ink)', { hidePill: true, id: 'finalLogo' })}</div>
+  <div class="w l" style="top:1110px;font-size:70px;color:var(--ink);${A('up', s + .9, .4)}">נוסעים חכם. <span class="m">משלמים בהתאם.</span></div>
+  <div class="logoline" style="position:absolute;right:80px;top:1560px;width:440px;color:var(--ink);${A('in', s + 1.1, .4)}">${tpl('logoline').replace('<svg ', '<svg style="width:100%;height:auto;display:block" ')}</div>
+  <div class="w r" style="top:1720px;font-size:28px;color:var(--ink);white-space:normal;padding:0 80px;line-height:1.45;${A('in', s + 1.3, .4)}">*שיעור החיסכון תלוי באיכות הנהיגה ובהיקף הנסועה. בכפוף לתנאי הפוליסה ולחיתום החברה.</div>`);
+document.head.insertAdjacentHTML('beforeend', '<style>.logoline svg path:nth-last-child(-n+2){fill:var(--symbol)}</style>');
+
+// בניית DOM
+const stage = document.getElementById('stage');
+S.forEach(o => { const d = document.createElement('div'); d.className = 'sc'; d.style.background = o.bg; d.innerHTML = o.html; stage.appendChild(d); o.el = d; });
+stage.insertAdjacentHTML('beforeend', `<svg id="lineLayer" viewBox="0 0 1080 1920"><polyline id="gline" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1"/></svg>`);
+
+// הבועית בלוגו הסופי = הקו הרציף: מודדים את מיקומה
+(function measurePill() {
+  const last = S[S.length - 1].el; last.style.display = 'block';
+  const r = last.querySelector('#finalLogo .pilltxt').getBoundingClientRect();
+  last.style.display = 'none';
+  SH.pill = rrect(r.left, r.top, r.right, r.bottom, r.height / 2);
+})();
+
+window.__setTime = t => {
+  S.forEach(o => o.el.style.display = (t >= o.s && t < o.e) ? 'block' : 'none');
+  document.getAnimations().forEach(a => { a.pause(); a.currentTime = t * 1000; });
+  S.forEach(o => { if (o.upd && t >= o.s && t < o.e) o.upd(t, o.el, o.s); });
+  drawLine(t);
+};
+window.__duration = T;
+if (!navigator.webdriver) { const st = performance.now(); (function tick(){ __setTime(((performance.now() - st) / 1000) % T); requestAnimationFrame(tick); })(); }
+</script>
+</body>
+</html>
