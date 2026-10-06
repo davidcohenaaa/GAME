@@ -35,6 +35,7 @@
   /* בועית: מילוי מלא או קו מתאר – לעולם לא שניהם */
   .pill{display:inline-block;border-radius:999px;padding:.06em .42em .16em;border:.06em solid currentColor;line-height:1;vertical-align:middle}
   .pill.f{border-color:transparent}
+  .pill.one{padding:.06em .62em .16em}
   .gap{display:inline-block;width:.18em}
   .sil{position:absolute}
   .sil svg{width:100%;height:auto;display:block;overflow:visible}
@@ -74,6 +75,7 @@
 <template id="plant"><!--ASSET:plant--></template>
 <template id="clock"><!--ASSET:clock--></template>
 <template id="pillow"><!--ASSET:pillow--></template>
+<template id="bag"><!--ASSET:bag--></template>
 <template id="behave"><!--ASSET:behave--></template>
 <template id="logoline"><!--ASSET:logo-line--></template>
 <!-- סילואטת רכב בגזירה ידנית (לאופציה B) – צבע אחד, בלי פרטים -->
@@ -82,13 +84,15 @@
 </template>
 
 <script>
-const OPT = new URLSearchParams(location.search).get('car') === 'car' ? 'car' : 'key'; // key = מפתח רכב, car = סילואטת רכב
+const Q = new URLSearchParams(location.search);
+const ROUND = Q.get('style') === 'round'; // אופציה C: פינות מעוגלות, אליפסות במקום עיגולים, שקית בסצנת התשלום
+const OPT = Q.get('car') === 'car' ? 'car' : 'key'; // key = מפתח רכב, car = סילואטת רכב
 const T = 26.0;
 const tpl = id => document.getElementById(id).innerHTML;
 const A = (name, at, dur = .45, ease = 'cubic-bezier(.2,.8,.2,1)') => `animation:${name} ${dur}s ${ease} ${at}s both;`;
 const chars = (txt, at, step, name) => [...txt].map((c, i) => c === ' ' ? ' ' : `<span class="ch" style="${A(name, at + i * step, .35)}">${c}</span>`).join('');
 const spans = (txt, cls) => [...txt].map(c => c === ' ' ? '<span class="ch">&nbsp;</span>' : `<span class="ch ${cls}">${c}</span>`).join('');
-const pill = (txt, cls = '', style = '') => `<span class="pill ${cls}" style="${style}">${txt}</span>`;
+const pill = (txt, cls = '', style = '') => `<span class="pill ${cls}${ROUND && [...txt].length === 1 ? ' one' : ''}" style="${style}">${txt}</span>`;
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const ease = x => 1 - Math.pow(1 - clamp(x), 3);
 const easeIO = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
@@ -128,12 +132,23 @@ const rrect = (x1, y1, x2, y2, r) => { // מלבן מעוגל (גם בועית �
   p.push([x2 - r, y1]); arc(x2 - r, y1 + r, -Math.PI / 2); p.push([x2, y2 - r]); arc(x2 - r, y2 - r, 0); p.push([(x1 + x2) / 2, y2]);
   return resample(p);
 };
-const GR = 400, GCX = 540, GCY = 1080;
-const gaugeArc = () => resample(Array.from({ length: 80 }, (_, i) => { const a = Math.PI * (1 - i / 79); return [GCX + GR * Math.cos(a), GCY - GR * Math.sin(a)]; }));
+const fillet = (pts, r) => { // מעגל כל פינה בפוליליין (לאופציה C)
+  if (!ROUND) return resample(pts);
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [p0, p1, p2] = [pts[i - 1], pts[i], pts[i + 1]];
+    const d1 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), d2 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), rr = Math.min(r, d1 / 2, d2 / 2);
+    const a = [p1[0] + (p0[0] - p1[0]) * rr / d1, p1[1] + (p0[1] - p1[1]) * rr / d1], b = [p1[0] + (p2[0] - p1[0]) * rr / d2, p1[1] + (p2[1] - p1[1]) * rr / d2];
+    for (let k = 0; k <= 10; k++) { const u = k / 10; out.push([(1 - u) * (1 - u) * a[0] + 2 * u * (1 - u) * p1[0] + u * u * b[0], (1 - u) * (1 - u) * a[1] + 2 * u * (1 - u) * p1[1] + u * u * b[1]]); }
+  }
+  out.push(pts[pts.length - 1]); return resample(out);
+};
+const GR = 400, GCX = 540, GCY = 1080, GRY = ROUND ? 300 : 400; // אופציה C: קשת אליפטית
+const gaugeArc = () => resample(Array.from({ length: 80 }, (_, i) => { const a = Math.PI * (1 - i / 79); return [GCX + GR * Math.cos(a), GCY - GRY * Math.sin(a)]; }));
 const SH = {
-  house: resample([[880, 1220], [200, 1220], [200, 780], [540, 440], [880, 780], [880, 1220]]),
+  house: fillet([[880, 1220], [200, 1220], [200, 780], [540, 440], [880, 780], [880, 1220]], 60),
   ground: line(-60, 1140, 1300),
-  bay: resample([[170, 1180], [170, 560], [910, 560], [910, 1180]]),
+  bay: fillet([[170, 1180], [170, 560], [910, 560], [910, 1180]], 70),
   ulAz: line(400, 680, 1130),
   ulPay: line(200, 880, 1180),
   divider: line(140, 940, 905),
@@ -219,7 +234,9 @@ const coinPaths = [
   'M70 42 V138', 'M150 42 V138',
   'M70 74 Q72 86 110 87 Q148 86 150 74', 'M70 106 Q72 118 110 119 Q148 118 150 106', 'M70 138 Q72 150 110 151 Q148 150 150 138',
 ];
-sc(6.0, 7.0, '#DFFFDF', s => `
+sc(6.0, 7.0, ROUND ? 'var(--green)' : '#DFFFDF', s => ROUND ? `
+  ${sil('bag', 'var(--mint)', 300, 230, 480, A('silIn', s, .5))}
+  <div class="w l" style="top:900px;font-size:260px;color:var(--ink);${A('in', s + .1, .15)}">לשלם</div>` : `
   <svg class="icon" viewBox="10 15 160 175" style="position:absolute;left:250px;top:250px;width:580px;color:var(--green);stroke-width:9;${A('pop', s, .4)}">
     ${coinPaths.map((d, i) => `<path d="${d}" pathLength="1" stroke-dasharray="1 1" style="${A('drawP', s + .05 + i * .04, .35)}"/>`).join('')}
     <circle cx="58" cy="138" r="34" fill="#DFFFDF" stroke="none"/>
@@ -297,7 +314,7 @@ sc(15.25, 16.75, 'var(--navy)', s => `
   <div class="w r" style="top:620px;font-size:76px;color:var(--sky);${A('up', s + .45, .35)}">אחרי כל נסיעה</div>
   <div class="w x" style="top:1070px;font-size:300px;color:var(--cream);direction:ltr;${A('pop', s + .4, .4)}">92</div>
   <svg class="icon" viewBox="0 0 100 100" style="position:absolute;left:480px;top:1420px;width:120px;color:var(--mint);stroke-width:7;${A('pop', s + .7, .35)}">
-    <path d="M50 8 Q90 9 92 50 Q91 90 50 92 Q9 91 8 51 Q10 10 50 8"/><path d="M30 52 L44 65 L71 36"/></svg>`);
+    ${ROUND ? '<ellipse cx="50" cy="50" rx="46" ry="36"/>' : '<path d="M50 8 Q90 9 92 50 Q91 90 50 92 Q9 91 8 51 Q10 10 50 8"/>'}<path d="M30 52 L44 65 L71 36"/></svg>`);
 
 // 11 – ליווי אישי 24/7 (שעון מעורר ברקע, ירוק + מנטה)
 sc(16.75, 17.75, 'var(--green)', s => `
@@ -306,8 +323,8 @@ sc(16.75, 17.75, 'var(--green)', s => `
   <div class="w x" style="top:880px;font-size:330px;color:var(--ink);direction:ltr;${A('pop', s + .25, .4)}">24/7</div>`);
 
 // 12 – ספידומטר: מחיר הביטוח יורד ב-33%
-const pt = (v, r) => { const a = Math.PI * (1 - v / 100); return [GCX + r * Math.cos(a), GCY - r * Math.sin(a)]; };
-const arcD = (v0, v1, r) => { const [x0, y0] = pt(v0, r), [x1, y1] = pt(v1, r); return `M${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1}`; };
+const pt = (v, r) => { const a = Math.PI * (1 - v / 100); return [GCX + r * Math.cos(a), GCY - r * GRY / GR * Math.sin(a)]; };
+const arcD = (v0, v1, r) => { const [x0, y0] = pt(v0, r), [x1, y1] = pt(v1, r); return `M${x0} ${y0} A${r} ${r * GRY / GR} 0 0 1 ${x1} ${y1}`; };
 const ticks = Array.from({ length: 11 }, (_, i) => { const [x1, y1] = pt(i * 10, GR - 34), [x2, y2] = pt(i * 10, GR - (i % 5 ? 64 : 92)); return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#D2E1FF" stroke-width="${i % 5 ? 5 : 9}" stroke-linecap="round"/>`; }).join('');
 sc(17.75, 20.5, 'var(--ink)', s => `
   <div class="w l" style="top:330px;font-size:110px;color:var(--cream);${A('in', s + .1, .25)}">וחיסכון של עד</div>
@@ -319,7 +336,7 @@ sc(17.75, 20.5, 'var(--ink)', s => `
     </g>
     <path id="gFill" fill="none" stroke="#5A7BEC" stroke-width="56"/>
     <path id="gSave" fill="none" stroke="#FF8C64" stroke-width="56"/>
-    <g id="needle" style="${A('in', s + .45, .2)}"><path d="M${GCX} ${GCY - 16} L${GCX - GR + 60} ${GCY} L${GCX} ${GCY + 16} Z" fill="#FBF2EB"/><circle cx="${GCX}" cy="${GCY}" r="34" fill="#5A7BEC"/></g>
+    <g id="needle" style="${A('in', s + .45, .2)}"><path id="needleP" fill="#FBF2EB" stroke="#FBF2EB" stroke-width="10" stroke-linejoin="round"/>${ROUND ? `<ellipse cx="${GCX}" cy="${GCY}" rx="42" ry="31" fill="#5A7BEC"/>` : `<circle cx="${GCX}" cy="${GCY}" r="34" fill="#5A7BEC"/>`}</g>
   </svg>
   <div class="w l" style="top:1200px;font-size:300px;color:var(--orange);direction:ltr"><span id="gv">0</span>%<span class="r" style="font-size:150px;vertical-align:top">*</span></div>
   <div class="w r" style="top:1540px;font-size:90px;color:var(--cream);${A('up', s + 1.6, .35)}">${pill('בביטוח המקיף')}</div>`,
@@ -327,7 +344,8 @@ sc(17.75, 20.5, 'var(--ink)', s => `
     const lt = t - s;
     let v = lt < .9 ? lerp(0, 100, ease((lt - .45) / .45)) : 67 + 33 * Math.exp(-(lt - .9) * 4.5) * Math.cos((lt - .9) * 7);
     v = clamp(v, 0, 100);
-    el.querySelector('#needle').setAttribute('transform', `rotate(${v / 100 * 180} ${GCX} ${GCY})`);
+    { const [tx, ty] = pt(v, GR - 60), ang = Math.atan2(ty - GCY, tx - GCX), nx = -Math.sin(ang) * 14, ny = Math.cos(ang) * 14; // מחוג שמכוון לנקודה על הקשת
+      el.querySelector('#needleP').setAttribute('d', `M${GCX + nx} ${GCY + ny} L${tx} ${ty} L${GCX - nx} ${GCY - ny} Z`); }
     el.querySelector('#gFill').setAttribute('d', arcD(.01, Math.max(.02, v), GR));
     el.querySelector('#gFill').setAttribute('opacity', clamp((lt - .45) / .2));
     const saved = lt > .9 ? Math.max(0, 100 - v) : 0;
