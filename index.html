@@ -15,22 +15,35 @@
     <section class="hero">
       <h1>תיאוריה לרכב פרטי</h1>
       <p id="tagline"></p>
-      <div class="actions">
-        <a class="btn" href="quiz.html?mode=exam">התחל מבחן תרגול</a>
-        <a class="btn ghost" href="learn.html">חומר לימוד</a>
+    </section>
+
+    <section class="ready" aria-labelledby="ready-h">
+      <div class="ready-main">
+        <h2 id="ready-h">כמה אתה קרוב לידע?</h2>
+        <div class="ready-score"><strong id="ready-pct">0%</strong><span id="ready-label"></span></div>
+        <div class="meter" id="ready-meter" role="progressbar" aria-labelledby="ready-h" aria-valuemin="0" aria-valuemax="100"><span></span></div>
+        <p class="hint" id="ready-note"></p>
+        <div class="actions" id="next-step"></div>
       </div>
-    </section>
-
-    <section aria-labelledby="progress-h">
-      <h2 id="progress-h">ההתקדמות שלך</h2>
       <div class="stats" id="stats"></div>
-      <button class="link" id="reset" type="button">איפוס התקדמות</button>
     </section>
 
-    <section aria-labelledby="topics-h">
-      <h2 id="topics-h">תרגול לפי נושא</h2>
-      <ul class="grid" id="topics"></ul>
+    <section aria-labelledby="path-h">
+      <h2 id="path-h">הדרך שלי עד התיאוריה</h2>
+      <ol class="path" id="path"></ol>
     </section>
+
+    <section aria-labelledby="more-h">
+      <h2 id="more-h">עוד דרכים להתאמן</h2>
+      <ul class="grid" id="more"></ul>
+    </section>
+
+    <section aria-labelledby="exams-h" id="exams-section" hidden>
+      <h2 id="exams-h">מבחנים אחרונים</h2>
+      <ul class="exam-list" id="exams"></ul>
+    </section>
+
+    <button class="link" id="reset" type="button">איפוס התקדמות</button>
   </main>
   <script type="module" src="js/home.js"></script>
 </body>

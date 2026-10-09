@@ -1,4 +1,4 @@
-import { el, loadJSON, shuffle, renderChrome } from "./common.js";
+import { el, loadJSON, shuffle, signFace, renderChrome } from "./common.js";
 
 await renderChrome("signs.html");
 const signs = await loadJSON("content/signs.json");
@@ -34,9 +34,7 @@ function setFilter(name) {
 }
 
 function sign(s) {
-  const face = s.image
-    ? el("img", { src: s.image, alt: s.name })
-    : el("span", { class: `sign sign-${s.shape}`, "aria-hidden": "true" }, el("span", {}, s.symbol));
+  const face = signFace(s);
   const meaning = el("span", { class: "meaning", hidden: hideMeaning }, s.meaning);
   const card = el("button", {
     class: "card sign-card",

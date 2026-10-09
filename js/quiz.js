@@ -1,7 +1,7 @@
-import { el, loadJSON, shuffle, recordAnswer, recordExam, renderChrome } from "./common.js";
+import { el, loadJSON, shuffle, recordAnswer, recordExam, getProgress, renderChrome } from "./common.js";
 
 const params = new URLSearchParams(location.search);
-const mode = params.get("mode") === "topic" ? "topic" : "exam";
+const mode = ["topic", "weak"].includes(params.get("mode")) ? params.get("mode") : "exam";
 const topicId = params.get("topic");
 
 const site = await renderChrome("quiz.html");
@@ -11,12 +11,17 @@ const [allQuestions, topics] = await Promise.all([
 ]);
 
 const topic = topics.find((t) => t.id === topicId);
-const pool = mode === "topic" ? allQuestions.filter((q) => q.topic === topicId) : allQuestions;
+const answered = getProgress().q;
+const pool =
+  mode === "topic" ? allQuestions.filter((q) => q.topic === topicId)
+  : mode === "weak" ? allQuestions.filter((q) => answered[q.id] && !answered[q.id].last)
+  : allQuestions;
 const questions = shuffle(pool).slice(0, mode === "exam" ? site.exam.questions : pool.length);
 
 const stage = document.getElementById("stage");
 const heading = document.getElementById("quiz-title");
-heading.textContent = mode === "exam" ? "מבחן תרגול" : `תרגול: ${topic?.title ?? ""}`;
+heading.textContent =
+  mode === "exam" ? "מבחן תרגול" : mode === "weak" ? "חזרה על טעויות" : `תרגול: ${topic?.title ?? ""}`;
 
 let index = 0;
 let mistakes = 0;
@@ -24,7 +29,10 @@ let deadline = null;
 let timerId = null;
 
 if (!questions.length) {
-  stage.replaceChildren(el("p", {}, "אין עדיין שאלות בנושא הזה."));
+  stage.replaceChildren(
+    el("p", {}, mode === "weak" ? "אין כרגע שאלות לחזרה. כל מה שענית עליו נכון בפעם האחרונה." : "אין עדיין שאלות בנושא הזה."),
+    el("a", { class: "btn ghost", href: "index.html" }, "לעמוד הראשי"),
+  );
 } else {
   if (mode === "exam") startTimer(site.exam.minutes * 60);
   showQuestion();

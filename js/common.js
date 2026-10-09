@@ -33,15 +33,27 @@ export function shuffle(list) {
 }
 
 // Progress is a per-browser convenience; the site works if storage is blocked.
-const KEY = "theory-progress-v1";
-const empty = () => ({ answered: {}, exams: [] });
+// q[id] = { a: attempts, c: correct count, last: was the latest answer correct }
+const KEY = "theory-progress-v2";
+const OLD_KEY = "theory-progress-v1";
+const empty = () => ({ q: {}, s: {}, exams: [], best: {} });
 
 export function getProgress() {
   try {
-    return { ...empty(), ...JSON.parse(localStorage.getItem(KEY)) };
+    const stored = localStorage.getItem(KEY);
+    if (stored) return { ...empty(), ...JSON.parse(stored) };
+    const old = JSON.parse(localStorage.getItem(OLD_KEY) ?? "null");
+    if (old) {
+      const migrated = empty();
+      for (const [id, ok] of Object.entries(old.answered ?? {}))
+        migrated.q[id] = { a: 1, c: ok ? 1 : 0, last: ok };
+      migrated.exams = old.exams ?? [];
+      return migrated;
+    }
   } catch {
-    return empty();
+    /* fall through to empty */
   }
+  return empty();
 }
 
 function saveProgress(progress) {
@@ -52,9 +64,20 @@ function saveProgress(progress) {
   }
 }
 
-export function recordAnswer(questionId, isCorrect) {
+function bump(map, id, ok) {
+  const prev = map[id] ?? { a: 0, c: 0 };
+  map[id] = { a: prev.a + 1, c: prev.c + (ok ? 1 : 0), last: ok };
+}
+
+export function recordAnswer(questionId, ok) {
   const progress = getProgress();
-  progress.answered[questionId] = isCorrect;
+  bump(progress.q, questionId, ok);
+  saveProgress(progress);
+}
+
+export function recordSign(signId, ok) {
+  const progress = getProgress();
+  bump(progress.s, signId, ok);
   saveProgress(progress);
 }
 
@@ -64,14 +87,59 @@ export function recordExam(result) {
   saveProgress(progress);
 }
 
+// Returns true when the score is a new personal best for this game mode.
+export function recordBest(mode, score) {
+  const progress = getProgress();
+  const isBest = score > (progress.best[mode] ?? 0);
+  if (isBest) {
+    progress.best[mode] = score;
+    saveProgress(progress);
+  }
+  return isBest;
+}
+
 export function resetProgress() {
   saveProgress(empty());
+}
+
+// "Mastered" = answered correctly at least twice AND the latest answer was correct.
+export const isMastered = (entry) => Boolean(entry && entry.last && entry.c >= 2);
+
+export function statsFor(questions, progress = getProgress()) {
+  const seen = questions.filter((q) => progress.q[q.id]);
+  const mastered = questions.filter((q) => isMastered(progress.q[q.id]));
+  const attempts = seen.reduce((n, q) => n + progress.q[q.id].a, 0);
+  const correct = seen.reduce((n, q) => n + progress.q[q.id].c, 0);
+  return {
+    total: questions.length,
+    seen: seen.length,
+    mastered: mastered.length,
+    weak: seen.filter((q) => !progress.q[q.id].last).length,
+    masteryPct: questions.length ? Math.round((mastered.length / questions.length) * 100) : 0,
+    accuracyPct: attempts ? Math.round((correct / attempts) * 100) : null,
+  };
+}
+
+export function readinessLabel(pct) {
+  if (pct >= 90) return "מוכן למבחן";
+  if (pct >= 70) return "קרוב מאוד";
+  if (pct >= 40) return "בדרך הנכונה";
+  if (pct > 0) return "בתחילת הדרך";
+  return "עוד לא התחלת";
+}
+
+// A sign is drawn from its image when it has one, otherwise from CSS shapes.
+export function signFace(s) {
+  return s.image
+    ? el("img", { src: s.image, alt: s.name })
+    : el("span", { class: `sign sign-${s.shape}`, "aria-hidden": "true" }, el("span", {}, s.symbol));
 }
 
 const NAV = [
   ["index.html", "ראשי"],
   ["learn.html", "חומר לימוד"],
   ["signs.html", "תמרורים"],
+  ["game.html", "משחק"],
   ["quiz.html?mode=exam", "מבחן"],
 ];
 
