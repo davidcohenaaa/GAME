@@ -90,10 +90,16 @@ export interface LinkCheck {
 
 const TIMEOUT = 10000;
 
-async function safeFetch(url: string, ua: string, maxRedirects = 4) {
+export async function safeFetch(
+  url: string,
+  ua: string,
+  opts: { maxRedirects?: number; check?: (u: string) => Promise<unknown> } = {},
+) {
+  const maxRedirects = opts.maxRedirects ?? 4;
+  const check = opts.check ?? assertPublicUrl;
   let current = url;
   for (let i = 0; i <= maxRedirects; i++) {
-    await assertPublicUrl(current);
+    await check(current);
     const res = await fetch(current, {
       redirect: "manual",
       signal: AbortSignal.timeout(TIMEOUT),

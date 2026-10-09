@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import type { RunResult, Settings } from "./types";
+import type { AnalysisResult, RunResult, Settings } from "./types";
 
 const DIR = path.join(process.cwd(), "data");
 
@@ -33,6 +33,9 @@ export async function loadSettings(): Promise<Settings> {
 export const saveSettings = (s: Settings) => writeJson("settings.json", s);
 export const loadRun = () => readJson<RunResult | null>("last-run.json", null);
 export const saveRun = (r: RunResult) => writeJson("last-run.json", r);
+export const loadAnalysis = () => readJson<AnalysisResult | null>("analysis.json", null);
+export const saveAnalysis = (a: AnalysisResult) => writeJson("analysis.json", a);
+export const isDemo = (s: Settings) => s.demo || process.env.MOCK === "1";
 
 export type KeyName = keyof Settings["keys"];
 const ENV: Record<KeyName, string> = {

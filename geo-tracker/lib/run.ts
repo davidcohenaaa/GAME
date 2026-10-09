@@ -5,7 +5,7 @@ import { askGoogleAi } from "./engines/apify-google";
 import { askOpenAI } from "./engines/openai";
 import { askPerplexity } from "./engines/perplexity";
 import { mockAnswer } from "./mock";
-import { getKey, type KeyName } from "./store";
+import { getKey, isDemo as demoOn, type KeyName } from "./store";
 import { ENGINES, type Cell, type EngineAnswer, type EngineId, type RunResult, type Settings } from "./types";
 
 const KEY_FOR: Record<EngineId, KeyName> = {
@@ -17,7 +17,6 @@ const KEY_FOR: Record<EngineId, KeyName> = {
   google_aimode: "apify",
 };
 
-const demoOn = (s: Settings) => s.demo || process.env.MOCK === "1";
 
 export function availableEngines(s: Settings): EngineId[] {
   return ENGINES.map((e) => e.id).filter((id) => demoOn(s) || getKey(s, KEY_FOR[id]));
