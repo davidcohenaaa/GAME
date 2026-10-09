@@ -1,0 +1,50 @@
+[
+  {
+    "id": "stop",
+    "name": "עצור",
+    "category": "תמרורי הסדר",
+    "shape": "octagon",
+    "symbol": "עצור",
+    "meaning": "חובה לעצור עצירה מלאה לפני קו העצירה ולתת זכות קדימה."
+  },
+  {
+    "id": "yield",
+    "name": "זכות קדימה",
+    "category": "תמרורי הסדר",
+    "shape": "triangle-down",
+    "symbol": "",
+    "meaning": "יש להאט ולתת זכות קדימה לתנועה בדרך הצטלבות."
+  },
+  {
+    "id": "no-entry",
+    "name": "אסורה הכניסה",
+    "category": "תמרורי איסור",
+    "shape": "circle-solid",
+    "symbol": "—",
+    "meaning": "אסור להיכנס לדרך בכיוון זה."
+  },
+  {
+    "id": "speed-50",
+    "name": "מהירות מרבית 50",
+    "category": "תמרורי איסור",
+    "shape": "circle",
+    "symbol": "50",
+    "meaning": "אסור לנסוע במהירות גבוהה מ-50 קמ\"ש."
+  },
+  {
+    "id": "crossing",
+    "name": "מעבר חצייה",
+    "category": "תמרורי מידע",
+    "shape": "square",
+    "symbol": "מעבר",
+    "meaning": "מקום מסומן לחציית הולכי רגל. יש להאט ולתת להם זכות קדימה."
+  },
+  {
+    "id": "danger",
+    "name": "סכנה",
+    "category": "תמרורי אזהרה",
+    "shape": "triangle-up",
+    "symbol": "!",
+    "meaning": "תמרור אזהרה: יש לנהוג בזהירות בקטע הדרך שלפניך."
+  }
+]
