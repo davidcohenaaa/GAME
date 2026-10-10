@@ -1,23 +1,33 @@
 <!DOCTYPE html>
-<html lang="he">
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>סרטים משמחים</title>
+    <title>לומדים SEO ו-GEO</title>
+    <meta name="description" content="קורס אינטראקטיבי בעברית ללימוד SEO ו-GEO מהבסיס ועד פרויקט ראשון בתשלום, עם חידונים, מבחנים ומעקב התקדמות.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%80%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>בחר את מצב הרוח שלך</h1>
-        <select id="mood-select">
-            <option value="happy">שמח</option>
-            <option value="sad">עצוב</option>
-            <option value="angry">כועס</option>
-            <option value="bored">משועמם</option>
-        </select>
-        <button class="ticket-btn" onclick="showMovie()">קבל סרט</button>
-        <div id="movie-result"></div>
+    <header class="topbar">
+        <button id="menu-btn" class="menu-btn" aria-label="תפריט">☰</button>
+        <a class="brand" href="#/">🚀 SEO + GEO בעברית</a>
+        <div class="top-progress" title="התקדמות כללית">
+            <span id="header-pct">0%</span>
+            <div class="top-bar"><div id="header-bar"></div></div>
+        </div>
+    </header>
+    <div class="layout">
+        <nav id="nav" class="sidebar" aria-label="מודולים"></nav>
+        <main id="main" class="content" tabindex="-1"></main>
     </div>
-    <script src="script.js"></script>
+    <script src="data/part1.js"></script>
+    <script src="data/part2.js"></script>
+    <script src="data/part3.js"></script>
+    <script src="js/progress.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/quiz.js"></script>
+    <script src="js/app.js"></script>
+    <noscript>האתר דורש JavaScript.</noscript>
 </body>
 </html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סרטים משמחים</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>בחר את מצב הרוח שלך</h1>
+        <select id="mood-select">
+            <option value="happy">שמח</option>
+            <option value="sad">עצוב</option>
+            <option value="angry">כועס</option>
+            <option value="bored">משועמם</option>
+        </select>
+        <button class="ticket-btn" onclick="showMovie()">קבל סרט</button>
+        <div id="movie-result"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

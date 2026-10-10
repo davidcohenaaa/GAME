@@ -1,0 +1,99 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-image: url('https://cleanify.co.il/wp-content/uploads/2022/04/%D7%91%D7%AA%D7%99-%D7%A7%D7%95%D7%9C%D7%A0%D7%95%D7%A2.jpg');
+    background-size: cover;
+    background-position: center;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+    color: #ffffff;
+    direction: rtl;
+}
+
+.container {
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    display: inline-block;
+    width: 90%;
+    max-width: 400px;
+    margin-top: 50px;
+}
+
+h1 {
+    margin-bottom: 20px;
+    font-size: 2em;
+    color: #ffcc00;
+}
+
+select {
+    padding: 10px;
+    margin-bottom: 20px;
+    font-size: 1em;
+    width: 100%;
+}
+
+.ticket-btn {
+    display: inline-block;
+    padding: 15px 30px;
+    background-color: #ffcc00;
+    color: #000000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2em;
+    transition: background-color 0.3s ease;
+    margin-bottom: 20px;
+    width: 100%;
+    position: relative;
+    background-color: #ffcc00;
+}
+
+.ticket-btn::before,
+.ticket-btn::after {
+    content: '';
+    position: absolute;
+    width: 15px;
+    height: 100%;
+    background: repeating-linear-gradient(
+        to bottom,
+        #000000,
+        #000000 2px,
+        #ffcc00 2px,
+        #ffcc00 4px
+    );
+}
+
+.ticket-btn::before {
+    left: -15px;
+    top: 0;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+
+.ticket-btn::after {
+    right: -15px;
+    top: 0;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+.ticket-btn:hover {
+    background-color: #e6b800;
+}
+
+#movie-result {
+    margin-top: 20px;
+}
+
+#movie-result h2 {
+    margin-bottom: 10px;
+    color: #ffcc00;
+}
+
+#movie-result img {
+    max-width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
