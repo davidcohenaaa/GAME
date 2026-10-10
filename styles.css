@@ -175,3 +175,23 @@ label input[type="text"] { padding: 8px; border: 1px solid var(--border); border
     .layout { display: block; padding: 0; }
     .cert-inner { border-color: #000; background: #fff; }
 }
+
+/* Levels */
+.nav-level {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    margin-top: 10px; padding: 8px 12px; border-radius: 10px; text-decoration: none;
+    color: var(--text); font-weight: 700; font-size: .92rem; background: var(--track);
+}
+.nav-level.active { background: var(--accent); color: var(--accent-ink); }
+.nav-link.sub { padding-inline-start: 22px; font-size: .9rem; }
+.levels-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.level-card {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+    padding: 12px; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; color: var(--text);
+}
+.level-card:hover { border-color: var(--accent); }
+.level-ring { width: 110px; }
+.milestones { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.milestones label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.milestones input { margin-top: 8px; }
+.small { font-size: .8rem; }

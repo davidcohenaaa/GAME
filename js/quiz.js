@@ -85,10 +85,11 @@
     });
   }
 
-  // מבחן מסכם: דגימה אקראית מכל השאלות במאגר
-  function finalPool(n) {
+  // מבחן רמה: דגימה אקראית מכל שאלות המודולים של הרמה
+  function finalPool(level, n) {
     var pool = [];
-    window.CURRICULUM.forEach(function (m) {
+    level.modules.forEach(function (id) {
+      var m = window.CURRICULUM.find(function (x) { return x.id === id; });
       m.lessons.forEach(function (l) { pool = pool.concat(l.quiz); });
       pool = pool.concat(m.exam);
     });
