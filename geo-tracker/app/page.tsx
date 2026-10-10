@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { EngineCoverage, ScoreRing, toneOf } from "./components/Charts";
 import { ENGINES, type AnalysisResult, type Gap, type PageProfile, type Presence, type Recommendation, type RunResult } from "@/lib/types";
 
 interface Score { key: string; name: string; score: number; isMe: boolean }
 
-const tone = (n: number) => (n >= 60 ? "green" : n >= 30 ? "orange" : "red");
-const icon = (p: Presence) => (p.linked ? "🔗" : p.mentioned ? "✅" : "❌");
+const chip = (p: Presence) =>
+  p.linked ? <span className="chip link">🔗 לינק</span> : p.mentioned ? <span className="chip mention">✅ אזכור</span> : <span className="chip none">לא מופיע</span>;
 
 export default function Dashboard() {
   const [run, setRun] = useState<RunResult | null>(null);
@@ -66,10 +67,11 @@ export default function Dashboard() {
 
       {run && me && (
         <>
-          <div className="card score">
-            <div className={`score-num ${tone(me.score)}`}>{me.score}</div>
+          <div className="card score hero">
+            <ScoreRing value={me.score} />
             <div>
-              <strong>ציון נראות (0–100)</strong>
+              <strong className="score-title">ציון נראות (0–100)</strong>
+              <span className={`pill ${toneOf(me.score)}`}>{me.score >= 60 ? "נראות גבוהה" : me.score >= 30 ? "יש מקום לשיפור" : "כמעט בלתי נראה"}</span>
               <div className="muted">
                 🔗 לינק = 100% · ✅ אזכור = 60% · ❌ לא מופיע = 0
                 <br />בדיקה אחרונה: {new Date(run.startedAt).toLocaleString("he-IL")}
@@ -94,7 +96,7 @@ export default function Dashboard() {
                       const c = run.cells.find((x) => x.prompt === p && x.engine === e);
                       return (
                         <td key={e} className="cell" title={c?.error ?? ""}>
-                          {!c ? "—" : c.status === "error" ? <span title={c.error}>⚠️</span> : icon(c.me)}
+                          {!c ? "—" : c.status === "error" ? <span title={c.error}>⚠️</span> : chip(c.me)}
                         </td>
                       );
                     })}
@@ -103,13 +105,16 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
-          <p className="muted">🔗 לינק לאתר · ✅ אזכור בשם · ❌ לא מופיע · ⚠️ המנוע נכשל</p>
+          <p className="muted">⚠️ = המנוע נכשל בשאילתה הזו</p>
+
+          <h2>כיסוי לפי מנוע</h2>
+          <EngineCoverage run={run} />
 
           <h2>אני מול המתחרים</h2>
           <div className="card bars">
             {[...scores].sort((a, b) => b.score - a.score).map((s) => (
               <div key={s.key} className={`bar ${s.isMe ? "me" : ""}`}>
-                <span>{s.name}{s.isMe ? " (אני)" : ""}</span>
+                <span className="who"><i className="avatar">{s.name.trim().charAt(0).toUpperCase()}</i>{s.name}{s.isMe ? " (אני)" : ""}</span>
                 <div className="track"><div className="fill" style={{ width: `${s.score}%` }} /></div>
                 <strong>{s.score}</strong>
               </div>
