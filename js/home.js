@@ -1,4 +1,4 @@
-import { el, loadJSON, getProgress, resetProgress, statsFor, readinessLabel, isMastered, renderChrome } from "./common.js";
+import { el, loadJSON, getProgress, resetProgress, exportProgress, importProgress, statsFor, readinessLabel, isMastered, renderChrome } from "./common.js";
 
 const site = await renderChrome("index.html");
 const [topics, questions, signs] = await Promise.all([
@@ -103,6 +103,32 @@ function render() {
 
 const card = (href, title, text) =>
   el("li", {}, el("a", { class: "card", href }, el("h3", {}, title), el("p", {}, text)));
+
+const backupMsg = document.getElementById("backup-msg");
+document.getElementById("export").addEventListener("click", () => {
+  const url = URL.createObjectURL(new Blob([exportProgress()], { type: "application/json" }));
+  const link = el("a", { href: url, download: `theory-progress-${new Date().toISOString().slice(0, 10)}.json` });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  backupMsg.textContent = "הגיבוי ירד כקובץ.";
+});
+const importFile = document.getElementById("import-file");
+document.getElementById("import").addEventListener("click", () => importFile.click());
+importFile.addEventListener("change", async () => {
+  const file = importFile.files[0];
+  importFile.value = "";
+  if (!file) return;
+  try {
+    if (!confirm("השחזור יחליף את ההתקדמות הנוכחית בדפדפן הזה. להמשיך?")) return;
+    importProgress(await file.text());
+    render();
+    backupMsg.textContent = "ההתקדמות שוחזרה.";
+  } catch (error) {
+    backupMsg.textContent = `השחזור נכשל: ${error.message}`;
+  }
+});
 
 document.getElementById("reset").addEventListener("click", () => {
   if (confirm("למחוק את כל ההתקדמות מהדפדפן הזה?")) {

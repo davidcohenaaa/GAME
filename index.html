@@ -43,7 +43,17 @@
       <ul class="exam-list" id="exams"></ul>
     </section>
 
-    <button class="link" id="reset" type="button">איפוס התקדמות</button>
+    <section aria-labelledby="backup-h" class="backup">
+      <h2 id="backup-h">שמירת התוצאות</h2>
+      <p class="hint">ההתקדמות נשמרת אוטומטית בדפדפן הזה. כדי להעביר אותה למכשיר אחר, או כגיבוי, הורד קובץ ושחזר אותו במקום אחר.</p>
+      <div class="actions">
+        <button class="btn ghost" id="export" type="button">הורד גיבוי</button>
+        <button class="btn ghost" id="import" type="button">שחזר מגיבוי</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+      </div>
+      <p id="backup-msg" class="hint" role="status"></p>
+      <button class="link" id="reset" type="button">איפוס התקדמות</button>
+    </section>
   </main>
   <script type="module" src="js/home.js"></script>
 </body>

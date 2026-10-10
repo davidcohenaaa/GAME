@@ -102,6 +102,19 @@ export function resetProgress() {
   saveProgress(empty());
 }
 
+// Backup / restore, so progress can move between devices (storage is per browser).
+export function exportProgress() {
+  return JSON.stringify({ app: "driving-theory", version: 2, savedAt: Date.now(), progress: getProgress() });
+}
+
+export function importProgress(text) {
+  const data = JSON.parse(text);
+  const p = data?.progress;
+  if (data?.app !== "driving-theory" || !p || typeof p.q !== "object" || typeof p.s !== "object" || !Array.isArray(p.exams))
+    throw new Error("הקובץ לא נראה כמו גיבוי של האתר הזה");
+  saveProgress({ ...empty(), ...p });
+}
+
 // "Mastered" = answered correctly at least twice AND the latest answer was correct.
 export const isMastered = (entry) => Boolean(entry && entry.last && entry.c >= 2);
 

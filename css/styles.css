@@ -160,7 +160,7 @@ a.card:hover, button.card:hover { border-color: var(--accent); }
 .step-links { display: flex; gap: 1.25rem; }
 .exam-list { list-style: none; padding: 0; margin: .5rem 0 0; }
 .exam-list li { padding: .4rem 0; border-bottom: 1px solid var(--line); }
-#reset { margin-top: 2.5rem; }
+
 
 /* game */
 .hud { display: flex; justify-content: space-between; gap: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .75rem 1.25rem; margin-bottom: 1.25rem; }
@@ -173,3 +173,8 @@ a.card:hover, button.card:hover { border-color: var(--accent); }
 .key { display: inline-block; width: 1.5rem; margin-inline-end: .5rem; color: var(--muted); font-size: .85rem; }
 button.btn { margin-top: .5rem; }
 
+
+/* backup */
+.backup { margin-top: 2rem; }
+.backup .actions { margin: .75rem 0; }
+.backup h2 { margin-top: 0; }
