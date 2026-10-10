@@ -7,19 +7,23 @@ const [topics, questions, signs] = await Promise.all([
   loadJSON("content/signs.json"),
 ]);
 
-const TOPIC_GOAL = 80; // % mastered before a topic counts as done
 document.getElementById("tagline").textContent = site.tagline;
 
 const stat = (value, label) =>
   el("div", { class: "stat" }, el("strong", {}, value), el("span", {}, label));
 
-function nextStep(topicRows, overall) {
+// A topic is done once its lesson was read and its comprehension check passed.
+const lessonOf = (progress, id) => progress.lessons?.[id] ?? {};
+const topicDone = (progress, id) => Boolean(lessonOf(progress, id).read && lessonOf(progress, id).passed);
+
+function nextStep(topicRows, progress) {
   if (!questions.length) return null;
-  const open = topicRows.find((r) => r.stats.total && r.stats.masteryPct < TOPIC_GOAL);
-  if (!open) return { text: "כל הנושאים מוכנים. הגיע הזמן למבחן מלא.", href: "quiz.html?mode=exam", label: "התחל מבחן" };
-  if (open.stats.seen === 0)
-    return { text: `הצעד הבא: ${open.topic.title}`, href: `learn.html?topic=${open.topic.id}`, label: "קרא את החומר" };
-  return { text: `הצעד הבא: ${open.topic.title}`, href: `quiz.html?mode=topic&topic=${open.topic.id}`, label: "המשך לתרגל" };
+  const open = topicRows.find((r) => !topicDone(progress, r.topic.id));
+  if (!open) return { text: "סיימת את כל הנושאים. הגיע הזמן למבחן מלא.", href: "quiz.html?mode=exam", label: "התחל מבחן" };
+  const { id, title } = open.topic;
+  const lesson = lessonOf(progress, id);
+  if (!lesson.read) return { text: `הצעד הבא: ${title}`, href: `learn.html?topic=${id}`, label: "התחל ללמוד" };
+  return { text: `הצעד הבא: בדיקת הבנה ב${title}`, href: `quiz.html?mode=check&topic=${id}`, label: "לבדיקת הבנה" };
 }
 
 function render() {
@@ -38,7 +42,7 @@ function render() {
   document.getElementById("ready-note").textContent =
     `${overall.mastered} מתוך ${overall.total} שאלות נחשבות "שלטת בהן": ענית עליהן נכון לפחות פעמיים, והתשובה האחרונה נכונה.`;
 
-  const step = nextStep(topicRows, overall);
+  const step = nextStep(topicRows, progress);
   document.getElementById("next-step").replaceChildren(
     ...(step ? [el("p", {}, step.text), el("a", { class: "btn", href: step.href }, step.label)] : []),
   );
@@ -52,7 +56,8 @@ function render() {
 
   document.getElementById("path").replaceChildren(
     ...topicRows.map(({ topic, stats }, i) => {
-      const done = stats.total > 0 && stats.masteryPct >= TOPIC_GOAL;
+      const done = topicDone(progress, topic.id);
+      const lesson = lessonOf(progress, topic.id);
       return el("li", { class: done ? "step done" : "step" },
         el("div", { class: "step-head" },
           el("span", { class: "step-no", "aria-hidden": "true" }, done ? "✓" : String(i + 1)),
@@ -66,7 +71,8 @@ function render() {
         el("div", { class: "step-foot" },
           el("span", { class: "meta" }, `${stats.mastered}/${stats.total} שאלות בשליטה`),
           el("span", { class: "step-links" },
-            el("a", { href: `learn.html?topic=${topic.id}` }, "חומר לימוד"),
+            el("a", { href: `learn.html?topic=${topic.id}` }, lesson.read ? "✓ שיעור" : "שיעור"),
+            el("a", { href: `quiz.html?mode=check&topic=${topic.id}` }, lesson.passed ? "✓ בדיקת הבנה" : "בדיקת הבנה"),
             el("a", { href: `quiz.html?mode=topic&topic=${topic.id}` }, "תרגול"),
           ),
         ),

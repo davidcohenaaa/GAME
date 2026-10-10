@@ -36,7 +36,7 @@ export function shuffle(list) {
 // q[id] = { a: attempts, c: correct count, last: was the latest answer correct }
 const KEY = "theory-progress-v2";
 const OLD_KEY = "theory-progress-v1";
-const empty = () => ({ q: {}, s: {}, exams: [], best: {} });
+const empty = () => ({ q: {}, s: {}, exams: [], best: {}, lessons: {} });
 
 export function getProgress() {
   try {
@@ -78,6 +78,13 @@ export function recordAnswer(questionId, ok) {
 export function recordSign(signId, ok) {
   const progress = getProgress();
   bump(progress.s, signId, ok);
+  saveProgress(progress);
+}
+
+// lessons[topicId] = { read: finished the lesson steps, passed: passed the comprehension check }
+export function recordLesson(topicId, patch) {
+  const progress = getProgress();
+  progress.lessons[topicId] = { ...progress.lessons[topicId], ...patch };
   saveProgress(progress);
 }
 
@@ -178,32 +185,4 @@ export async function renderChrome(active) {
   document.body.prepend(header);
   document.body.append(footer);
   return site;
-}
-
-// Minimal markdown: headings, bullet lists, quotes, **bold**, paragraphs.
-export function renderMarkdown(source) {
-  const root = document.createDocumentFragment();
-  let list = null;
-  const inline = (text) =>
-    text
-      .split(/(\*\*[^*]+\*\*)/)
-      .map((part) =>
-        part.startsWith("**") ? el("strong", {}, part.slice(2, -2)) : part,
-      );
-
-  for (const raw of source.split("\n")) {
-    const line = raw.trim();
-    if (line.startsWith("- ")) {
-      if (!list) root.append((list = el("ul")));
-      list.append(el("li", {}, inline(line.slice(2))));
-      continue;
-    }
-    list = null;
-    if (!line) continue;
-    if (line.startsWith("## ")) root.append(el("h3", {}, line.slice(3)));
-    else if (line.startsWith("# ")) root.append(el("h2", {}, line.slice(2)));
-    else if (line.startsWith("> ")) root.append(el("blockquote", {}, inline(line.slice(2))));
-    else root.append(el("p", {}, inline(line)));
-  }
-  return root;
 }

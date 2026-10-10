@@ -11,8 +11,8 @@ const signs = read("content/signs.json");
 const topicIds = new Set(topics.map((t) => t.id));
 
 for (const t of topics) {
-  if (!existsSync(new URL(`../content/topics/${t.id}.md`, import.meta.url)))
-    fail(`נושא "${t.id}": חסר הקובץ content/topics/${t.id}.md`);
+  if (!existsSync(new URL(`../content/topics/${t.id}.html`, import.meta.url)))
+    fail(`נושא "${t.id}": חסר הקובץ content/topics/${t.id}.html`);
 }
 
 const seen = new Set();
@@ -26,6 +26,7 @@ for (const q of questions) {
   if (!Array.isArray(q.answers) || q.answers.length < 2) fail(`${where}: צריך לפחות 2 תשובות`);
   else if (!Number.isInteger(q.correct) || q.correct < 0 || q.correct >= q.answers.length)
     fail(`${where}: "correct" חייב להיות מספר בין 0 ל-${q.answers.length - 1}`);
+  if (q.group && !['concept', 'official'].includes(q.group)) fail(`${where}: group חייב להיות concept או official`);
   if (q.image && !existsSync(new URL(`../${q.image}`, import.meta.url)))
     fail(`${where}: קובץ התמונה לא נמצא (${q.image})`);
 }

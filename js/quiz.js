@@ -1,7 +1,9 @@
-import { el, loadJSON, shuffle, recordAnswer, recordExam, getProgress, renderChrome } from "./common.js";
+import { el, loadJSON, shuffle, recordAnswer, recordExam, recordLesson, getProgress, renderChrome } from "./common.js";
 
 const params = new URLSearchParams(location.search);
-const mode = ["topic", "weak"].includes(params.get("mode")) ? params.get("mode") : "exam";
+const mode = ["topic", "weak", "check"].includes(params.get("mode")) ? params.get("mode") : "exam";
+const CHECK_LENGTH = 6;
+const CHECK_PASS = 0.7; // share of correct answers that passes a comprehension check
 const topicId = params.get("topic");
 
 const site = await renderChrome("quiz.html");
@@ -12,16 +14,23 @@ const [allQuestions, topics] = await Promise.all([
 
 const topic = topics.find((t) => t.id === topicId);
 const answered = getProgress().q;
+const topicQuestions = allQuestions.filter((q) => q.topic === topicId);
+const concept = topicQuestions.filter((q) => q.group === "concept");
 const pool =
-  mode === "topic" ? allQuestions.filter((q) => q.topic === topicId)
+  mode === "topic" ? topicQuestions
+  : mode === "check" ? (concept.length ? concept : topicQuestions)
   : mode === "weak" ? allQuestions.filter((q) => answered[q.id] && !answered[q.id].last)
   : allQuestions;
-const questions = shuffle(pool).slice(0, mode === "exam" ? site.exam.questions : pool.length);
+const limit = mode === "exam" ? site.exam.questions : mode === "check" ? CHECK_LENGTH : pool.length;
+const questions = shuffle(pool).slice(0, limit);
 
 const stage = document.getElementById("stage");
 const heading = document.getElementById("quiz-title");
 heading.textContent =
-  mode === "exam" ? "מבחן תרגול" : mode === "weak" ? "חזרה על טעויות" : `תרגול: ${topic?.title ?? ""}`;
+  mode === "exam" ? "מבחן תרגול"
+  : mode === "weak" ? "חזרה על טעויות"
+  : mode === "check" ? `בדיקת הבנה: ${topic?.title ?? ""}`
+  : `תרגול: ${topic?.title ?? ""}`;
 
 let index = 0;
 let mistakes = 0;
@@ -73,6 +82,7 @@ function showQuestion() {
     feedback.replaceChildren(
       el("strong", {}, ok ? "נכון. " : "לא נכון. "),
       q.explanation ?? "",
+      q.source && el("small", { class: "source" }, q.source),
     );
     feedback.classList.add(ok ? "ok" : "bad");
     next.hidden = false;
@@ -101,6 +111,8 @@ function finish(timedOut) {
   const total = mistakes + unanswered;
   const passed = mode === "exam" ? total <= site.exam.maxMistakes : null;
   if (mode === "exam") recordExam({ mistakes: total, passed, date: Date.now() });
+  const checkPassed = mode === "check" ? questions.length - total >= Math.ceil(questions.length * CHECK_PASS) : null;
+  if (checkPassed) recordLesson(topicId, { passed: true });
 
   stage.replaceChildren(...[
     el("h2", {}, timedOut ? "הזמן נגמר" : "סיימת"),
@@ -108,7 +120,12 @@ function finish(timedOut) {
     passed != null &&
       el("p", { class: passed ? "ok" : "bad" },
         passed ? "עברת את המבחן." : `לא עברת. מותרות עד ${site.exam.maxMistakes} טעויות.`),
-    el("a", { class: "btn", href: location.href }, "שוב"),
+    checkPassed != null &&
+      el("p", { class: checkPassed ? "ok" : "bad" },
+        checkPassed ? "עברת את בדיקת ההבנה." : "כדאי לחזור על החומר לפני שממשיכים."),
+    mode === "check" && !checkPassed && el("a", { class: "btn", href: `learn.html?topic=${topicId}` }, "חזרה לחומר"),
+    mode === "check" && checkPassed && el("a", { class: "btn", href: `quiz.html?mode=topic&topic=${topicId}` }, "לתרגול הנושא"),
+    el("a", { class: mode === "check" ? "btn ghost" : "btn", href: location.href }, "שוב"),
     el("a", { class: "btn ghost", href: "index.html" }, "לעמוד הראשי"),
   ].filter(Boolean));
 }
