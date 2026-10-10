@@ -1,9 +1,10 @@
-import { el, loadJSON, getProgress, resetProgress, statsFor, readinessLabel, renderChrome } from "./common.js";
+import { el, loadJSON, getProgress, resetProgress, statsFor, readinessLabel, isMastered, renderChrome } from "./common.js";
 
 const site = await renderChrome("index.html");
-const [topics, questions] = await Promise.all([
+const [topics, questions, signs] = await Promise.all([
   loadJSON("content/topics.json"),
   loadJSON("content/questions.json"),
+  loadJSON("content/signs.json"),
 ]);
 
 const TOPIC_GOAL = 80; // % mastered before a topic counts as done
@@ -87,7 +88,7 @@ function render() {
   document.getElementById("more").replaceChildren(
     card("quiz.html?mode=weak", "חזרה על טעויות", overall.weak ? `${overall.weak} שאלות שטעית בהן לאחרונה` : "אין כרגע שאלות לחזרה"),
     card("game.html", "משחק", "מרוץ תמרורים ושאלות ב-60 שניות"),
-    card("signs.html", "גלריית תמרורים", "כרטיסיות עם מצב בוחן"),
+    card("signs.html", "לוח התמרורים", `${signs.filter((s) => isMastered(progress.s[s.number])).length} מתוך ${signs.length} תמרורים בשליטה`),
   );
 
   const exams = progress.exams.slice(-5).reverse();

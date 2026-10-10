@@ -34,10 +34,10 @@ const signIds = new Set();
 for (const s of signs) {
   if (signIds.has(s.id)) fail(`תמרור ${s.id}: id כפול`);
   signIds.add(s.id);
-  for (const field of ["name", "category", "meaning"]) if (!s[field]) fail(`תמרור ${s.id}: חסר ${field}`);
-  if (!s.image && !s.shape) fail(`תמרור ${s.id}: צריך image או shape`);
-  if (s.image && !existsSync(new URL(`../${s.image}`, import.meta.url)))
-    fail(`תמרור ${s.id}: קובץ התמונה לא נמצא (${s.image})`);
+  for (const field of ["number", "category", "meaning"]) if (!s[field]) fail(`תמרור ${s.id}: חסר ${field}`);
+  if (!Array.isArray(s.images) || s.images.length === 0) fail(`תמרור ${s.id}: צריך לפחות תמונה אחת ב-images`);
+  for (const image of s.images ?? [])
+    if (!existsSync(new URL(`../${image}`, import.meta.url))) fail(`תמרור ${s.id}: קובץ התמונה לא נמצא (${image})`);
 }
 
 if (errors.length) {

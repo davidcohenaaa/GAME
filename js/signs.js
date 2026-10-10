@@ -1,53 +1,73 @@
-import { el, loadJSON, shuffle, signFace, renderChrome } from "./common.js";
+import { el, loadJSON, shuffle, signFace, getProgress, isMastered, renderChrome } from "./common.js";
 
 await renderChrome("signs.html");
 const signs = await loadJSON("content/signs.json");
 const grid = document.getElementById("signs");
 const filters = document.getElementById("filters");
 const flipHint = document.getElementById("flip-hint");
+const count = document.getElementById("count");
+const search = document.getElementById("search");
+const known = getProgress().s;
 
-let active = "הכל";
+let activePart = 0; // 0 = all
 let hideMeaning = false;
 
-const categories = ["הכל", ...new Set(signs.map((s) => s.category))];
-const filterButtons = categories.map((name) =>
-  el("button", { class: "chip", "aria-pressed": name === active, onclick: () => setFilter(name) }, name),
-);
-filters.append(...filterButtons);
+const parts = [...new Map(signs.map((s) => [s.part, s.category])).entries()].sort((a, b) => a[0] - b[0]);
+const chip = (label, onclick, pressed = false) =>
+  el("button", { class: "chip", type: "button", "aria-pressed": pressed, onclick }, label);
 
-const quizToggle = el("button", {
-  class: "chip",
-  "aria-pressed": false,
-  onclick: (event) => {
-    hideMeaning = !hideMeaning;
-    event.currentTarget.setAttribute("aria-pressed", hideMeaning);
-    flipHint.hidden = !hideMeaning;
+const partButtons = [[0, "הכל"], ...parts].map(([part, label]) => {
+  const button = chip(label, () => {
+    activePart = part;
+    partButtons.forEach((b) => b.setAttribute("aria-pressed", b === button));
     render();
-  },
-}, "מצב בוחן: הסתר משמעות");
-filters.append(quizToggle);
+  }, part === activePart);
+  return button;
+});
+filters.append(...partButtons);
 
-function setFilter(name) {
-  active = name;
-  filterButtons.forEach((b) => b.setAttribute("aria-pressed", b.textContent === name));
+const quizToggle = chip("מצב בוחן: הסתר פירוש", () => {
+  hideMeaning = !hideMeaning;
+  quizToggle.setAttribute("aria-pressed", hideMeaning);
+  flipHint.hidden = !hideMeaning;
   render();
-}
+}, false);
+document.getElementById("tools").append(quizToggle);
+search.addEventListener("input", render);
 
-function sign(s) {
-  const face = signFace(s);
-  const meaning = el("span", { class: "meaning", hidden: hideMeaning }, s.meaning);
-  const card = el("button", {
+function card(s) {
+  const body = el("span", { class: "sign-text" },
+    el("span", { class: "meaning", hidden: hideMeaning }, s.meaning),
+    s.validity && el("span", { class: "validity", hidden: hideMeaning }, `בתוקף: ${s.validity}`),
+  );
+  const mastered = isMastered(known[s.number]);
+  const button = el("button", {
     class: "card sign-card",
-    onclick: () => (meaning.hidden = !meaning.hidden),
+    type: "button",
     "aria-expanded": !hideMeaning,
-  }, face, el("span", { class: "name" }, s.name), meaning);
-  card.addEventListener("click", () => card.setAttribute("aria-expanded", !meaning.hidden));
-  return el("li", {}, card);
+    onclick: () => {
+      for (const part of body.children) part.hidden = !part.hidden;
+      button.setAttribute("aria-expanded", !body.firstChild.hidden);
+    },
+  },
+    signFace(s),
+    el("span", { class: "sign-head" },
+      el("span", { class: "num" }, s.number),
+      mastered && el("span", { class: "badge" }, "שלטת"),
+    ),
+    body,
+  );
+  return el("li", {}, button);
 }
 
 function render() {
-  const shown = signs.filter((s) => active === "הכל" || s.category === active);
-  grid.replaceChildren(...(hideMeaning ? shuffle(shown) : shown).map(sign));
+  const query = search.value.trim();
+  const shown = signs.filter((s) =>
+    (!activePart || s.part === activePart) &&
+    (!query || s.number.includes(query) || s.meaning.includes(query)),
+  );
+  count.textContent = `${shown.length} תמרורים`;
+  grid.replaceChildren(...(hideMeaning ? shuffle(shown) : shown).map(card));
 }
 
 render();

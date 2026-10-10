@@ -128,11 +128,10 @@ export function readinessLabel(pct) {
   return "עוד לא התחלת";
 }
 
-// A sign is drawn from its image when it has one, otherwise from CSS shapes.
+// A sign can have several pictures (variants shown side by side in the official table).
 export function signFace(s) {
-  return s.image
-    ? el("img", { src: s.image, alt: s.name })
-    : el("span", { class: `sign sign-${s.shape}`, "aria-hidden": "true" }, el("span", {}, s.symbol));
+  return el("span", { class: "sign-imgs" },
+    s.images.map((src) => el("img", { src, alt: `תמרור ${s.number}`, loading: "lazy" })));
 }
 
 const NAV = [

@@ -11,8 +11,10 @@ const [signs, questions] = await Promise.all([
 
 const ROUND_SECONDS = 60;
 const LIVES = 3;
+// Only signs with a short meaning make a readable multiple-choice answer.
+const quizSigns = signs.filter((s) => s.meaning.length <= 70);
 const MODES = {
-  signs: { label: "זהה את התמרור", count: signs.length, min: 4 },
+  signs: { label: "מה פירוש התמרור?", count: quizSigns.length, min: 4 },
   questions: { label: "שאלות תיאוריה", count: questions.length, min: 1 },
 };
 
@@ -41,15 +43,24 @@ function showMenu() {
 
 function makeItem(mode, source) {
   if (mode === "signs") {
-    const others = shuffle(signs.filter((s) => s.name !== source.name)).slice(0, 3);
-    const options = shuffle([source, ...others]);
+    // Distractors: other meanings, preferably from the same part of the table.
+    const meanings = new Set([source.meaning]);
+    const pick = (list) => {
+      for (const s of shuffle(list)) {
+        if (meanings.size >= 4) break;
+        meanings.add(s.meaning);
+      }
+    };
+    pick(quizSigns.filter((s) => s.part === source.part));
+    pick(quizSigns);
+    const options = shuffle([...meanings]);
     return {
-      title: "איזה תמרור זה?",
+      title: "מה פירוש התמרור?",
       visual: el("div", { class: "game-sign" }, signFace(source)),
-      options: options.map((s) => s.name),
-      correct: options.indexOf(source),
+      options,
+      correct: options.indexOf(source.meaning),
       explain: source.meaning,
-      record: (ok) => recordSign(source.id, ok),
+      record: (ok) => recordSign(source.number, ok),
     };
   }
   const order = shuffle(source.answers.map((text, i) => ({ text, i })));
@@ -86,7 +97,7 @@ function start(mode) {
   };
 
   const nextSource = () => {
-    if (!state.queue.length) state.queue = shuffle(mode === "signs" ? signs : questions);
+    if (!state.queue.length) state.queue = shuffle(mode === "signs" ? quizSigns : questions);
     return state.queue.pop();
   };
 

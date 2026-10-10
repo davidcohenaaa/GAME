@@ -12,9 +12,14 @@
 </head>
 <body>
   <main class="wrap">
-    <h1>תמרורים</h1>
-    <div class="filters" id="filters" role="group" aria-label="סינון"></div>
-    <p id="flip-hint" class="hint" hidden>נסה לנחש את המשמעות, ואז לחץ על הכרטיס כדי לראות אותה.</p>
+    <h1>לוח התמרורים</h1>
+    <p class="hint">התמרורים והפירושים לקוחים מלוח התמרורים הרשמי של משרד התחבורה (ספטמבר 2022).</p>
+    <div class="filters" id="filters" role="group" aria-label="חלקי הלוח"></div>
+    <div class="tools" id="tools">
+      <input id="search" class="search" type="search" placeholder="חיפוש לפי מספר או פירוש" aria-label="חיפוש תמרור">
+      <span id="count" class="meta" aria-live="polite"></span>
+    </div>
+    <p id="flip-hint" class="hint" hidden>נסה לנחש את הפירוש, ואז לחץ על הכרטיס כדי לראות אותו.</p>
     <ul class="grid signs" id="signs"></ul>
   </main>
   <script type="module" src="js/signs.js"></script>
