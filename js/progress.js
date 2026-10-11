@@ -68,7 +68,7 @@
 
     levels: function () { return window.LEVELS; },
     levelById: function (id) { return window.LEVELS.find(function (l) { return l.id === id; }); },
-    levelModules: function (lv) { return lv.modules.map(moduleById); },
+    levelModules: function (lv) { return lv.modules.map(moduleById).filter(Boolean); },
     levelOfModule: function (moduleId) {
       return window.LEVELS.find(function (l) { return l.modules.indexOf(moduleId) !== -1; });
     },
@@ -116,7 +116,7 @@
 
     // מבחני המודולים של הרמה עברו (תנאי לפתיחת מבחן הרמה)
     levelExamsPassed: function (lv) {
-      return lv.modules.every(function (id) { return P.examPassed(id); });
+      return P.levelModules(lv).every(function (m) { return P.examPassed(m.id); });
     },
 
     // אחוז התקדמות של מודול: 70% שיעורים, 30% מבחן

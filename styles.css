@@ -195,3 +195,14 @@ label input[type="text"] { padding: 8px; border: 1px solid var(--border); border
 .milestones label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
 .milestones input { margin-top: 8px; }
 .small { font-size: .8rem; }
+
+/* Tools */
+.tag { font-size: .68rem; background: var(--accent); color: var(--accent-ink); padding: 0 6px; border-radius: 99px; vertical-align: middle; margin-inline-start: 4px; }
+.tool-info { margin: 4px 0 8px; color: var(--muted); }
+.tool-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.tool-list a { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; text-decoration: none; color: var(--text); }
+.tool-list a:hover { border-color: var(--accent); }
+.tool-name { font-weight: 700; flex: 1 1 220px; }
+.cost { font-size: .78rem; padding: 1px 8px; border-radius: 99px; background: var(--track); }
+.cost-free, .cost-free-limited { background: var(--good-bg); color: var(--good); }
+.cost-paid { background: var(--note-bg); }

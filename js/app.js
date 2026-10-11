@@ -16,7 +16,14 @@
     }
     return null;
   }
-  function moduleNumber(id) { return C.findIndex(function (m) { return m.id === id; }) + 1; }
+  // מספור מודולים לפי סדר הרמות (ולא לפי סדר טעינת קבצי הנתונים)
+  var ORDER = [];
+  P.levels().forEach(function (lv) { P.levelModules(lv).forEach(function (m) { ORDER.push(m.id); }); });
+  function moduleNumber(id) { return ORDER.indexOf(id) + 1; }
+  function orderedModules() { return ORDER.map(moduleById); }
+
+  var COST_LABEL = { free: "חינמי", "free-limited": "חינמי עם הגבלות", paid: "בתשלום", mixed: "חינמי ובתשלום" };
+  function toolTag(m) { return m.kind ? ' <span class="tag">' + (m.kind === "business" ? "עסק" : "כלי") + "</span>" : ""; }
 
   // באנר "מומלץ לסיים קודם" כשהרמה הקודמת עוד לא הושלמה
   function prevLevelNote(lv) {
@@ -37,11 +44,12 @@
         var pct = P.moduleProgress(m);
         var active = route.indexOf("#/module/" + m.id) === 0 || route.indexOf("#/lesson/" + m.id) === 0 || route === "#/exam/" + m.id;
         html += '<a class="nav-link sub' + (active ? " active" : "") + '" href="#/module/' + m.id + '"><span>' + m.icon + " " +
-          moduleNumber(m.id) + ". " + esc(m.title) + '</span><span class="badge' + (pct === 100 ? " full" : "") + '">' + pct + "%</span></a>";
+          moduleNumber(m.id) + ". " + esc(m.title) + toolTag(m) + '</span><span class="badge' + (pct === 100 ? " full" : "") + '">' + pct + "%</span></a>";
       });
       html += '<a class="nav-link sub' + (route === "#/final/" + lv.id ? " active" : "") + '" href="#/final/' + lv.id + '">🏁 מבחן ' + esc(lv.short) +
         (P.finalPassed(lv.id) ? ' <span class="badge full">✔</span>' : "") + "</a>";
     });
+    html += '<a class="nav-link' + (route === "#/tools" ? " active" : "") + '" href="#/tools">🧰 ארגז הכלים</a>';
     html += '<a class="nav-link' + (route === "#/about" ? " active" : "") + '" href="#/about">ℹ️ על הקורס והגדרות</a>';
     nav.innerHTML = html;
     var o = P.overall();
@@ -82,7 +90,7 @@
     html += "</div></section>";
 
     html += '<section class="card"><h2>התקדמות לפי מודול</h2>' +
-      window.Charts.bars(C.map(function (m, i) { return { label: (i + 1) + ". " + m.title, value: P.moduleProgress(m) }; })) + "</section>";
+      window.Charts.bars(orderedModules().map(function (m, i) { return { label: (i + 1) + ". " + m.title, value: P.moduleProgress(m) }; })) + "</section>";
 
     var hist = P.state().history.map(function (h) {
       var lab = h.kind === "final" ? "מבחן רמה" : h.kind === "exam" ? "מבחן מודול" : "חידון שיעור";
@@ -116,7 +124,7 @@
     P.levelModules(lv).forEach(function (m) {
       var pct = P.moduleProgress(m);
       html += '<li class="' + (pct === 100 ? "done" : "") + '"><a href="#/module/' + m.id + '"><span class="check">' + (pct === 100 ? "✔" : m.icon) + "</span>" +
-        '<span class="lt">' + moduleNumber(m.id) + ". " + esc(m.title) + '</span><span class="muted">' + m.lessons.length + " שיעורים · " + pct + "%</span></a></li>";
+        '<span class="lt">' + moduleNumber(m.id) + ". " + esc(m.title) + toolTag(m) + '</span><span class="muted">' + m.lessons.length + " שיעורים · " + pct + "%</span></a></li>";
     });
     html += "</ol></section>";
 
@@ -151,6 +159,7 @@
     var html = '<p class="crumbs"><a href="#/">לוח התקדמות</a> › <a href="#/level/' + lv.id + '">' + esc(lv.short) + "</a> › " + esc(m.title) + "</p>";
     html += "<h1>" + m.icon + " " + esc(m.title) + "</h1><p class='lead'>" + esc(m.summary) + "</p>";
     html += prevLevelNote(lv);
+    if (m.tool) html += '<p class="tool-info">🧰 <b>הכלי:</b> ' + esc(m.tool) + (m.cost ? ' · <b>עלות:</b> ' + esc(COST_LABEL[m.cost] || m.cost) : "") + "</p>";
     html += '<div class="progress-line"><div style="width:' + P.moduleProgress(m) + '%"></div></div>';
     html += '<ol class="lesson-list">';
     m.lessons.forEach(function (l) {
@@ -257,6 +266,24 @@
     document.getElementById("cert-print").addEventListener("click", function () { window.print(); });
   }
 
+  // ---------- ארגז הכלים ----------
+  function toolsPage() {
+    var html = "<h1>🧰 ארגז הכלים</h1><p class='lead'>כל הכלים שהקורס מלמד, לפי הרמה שבה כדאי להתחיל לעבוד איתם.</p>";
+    html += '<div class="note"><b>איך להשקיע בכלים:</b> אפשר להתחיל לגמרי בחינם (כלי גוגל, Screaming Frog בגרסה החינמית, DevTools). כלים בתשלום כמו Ahrefs ו-Semrush שווים בדרך כלל אחרי שיש לקוח או הכנסה שמכסים אותם. מחירים, תוכניות ותקופות ניסיון משתנים, ולכן בדקו באתר הכלי. אין לשתף חשבון בתשלום בניגוד לתנאי השימוש.</div>';
+    P.levels().forEach(function (lv) {
+      var mods = P.levelModules(lv).filter(function (m) { return m.tool; });
+      if (!mods.length) return;
+      html += '<section class="card"><h2>' + lv.icon + " " + esc(lv.name) + '</h2><ul class="tool-list">';
+      mods.forEach(function (m) {
+        var pct = P.moduleProgress(m);
+        html += '<li><a href="#/module/' + m.id + '"><span class="tool-name">' + m.icon + " " + esc(m.tool) + '</span><span class="muted">' + esc(m.title) +
+          '</span><span class="cost cost-' + esc(m.cost || "mixed") + '">' + esc(COST_LABEL[m.cost] || "") + '</span><span class="badge' + (pct === 100 ? " full" : "") + '">' + pct + "%</span></a></li>";
+      });
+      html += "</ul></section>";
+    });
+    view(html);
+  }
+
   // ---------- אודות והגדרות ----------
   function aboutPage() {
     var html = "<h1>על הקורס והגדרות</h1>" +
@@ -300,6 +327,7 @@
       case "exam": return examPage(parts[1]);
       case "final": return finalPage(parts[1]);
       case "cert": return certPage(parts[1]);
+      case "tools": return toolsPage();
       case "about": return aboutPage();
       default: return dashboard();
     }
