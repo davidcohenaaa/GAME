@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Link2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { getAnswers } from "@/lib/geo.functions";
+import { sourceName } from "@/lib/catalog";
 
 export const Route = createFileRoute("/answers/")({
   head: () => ({
@@ -46,7 +47,7 @@ function AnswersList() {
                 </div>
                 <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  {a.source}
+                  {sourceName(a.source)}
                 </span>
                 <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Link>

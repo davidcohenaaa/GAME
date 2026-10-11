@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { HelpCircle, Lightbulb, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { getComparisonData } from "@/lib/geo.functions";
-import { DOMAINS, MY_BRAND, COMPARE_CRITERIA, ACTIONS } from "@/data/mock";
+import { DOMAINS, sourceName } from "@/lib/catalog";
+import { answersInDomain, computeBrandRows, type BrandRow, type MetricsAnswer } from "@/lib/metrics";
 
 export const Route = createFileRoute("/comparison")({
   head: () => ({
@@ -13,10 +13,10 @@ export const Route = createFileRoute("/comparison")({
       { title: "השוואה לפי תחום | GEO" },
       {
         name: "description",
-        content: "דירוג משוקלל של המותג שלך מול המתחרים לפי תחום, כולל ניתוח למה מתחרה מקדים אותך.",
+        content: "דירוג המותג שלך מול המתחרים לפי תחום, כולל השאלות שבהן מתחרה מקדים אותך.",
       },
       { property: "og:title", content: "השוואה לפי תחום | GEO" },
-      { property: "og:description", content: "דירוג משוקלל מול המתחרים וניתוח פערים לפי עמוד." },
+      { property: "og:description", content: "דירוג מול המתחרים והשאלות שבהן מתחרה מקדים אותך." },
     ],
   }),
   loader: async () => {
@@ -26,94 +26,53 @@ export const Route = createFileRoute("/comparison")({
   component: ComparisonPage,
 });
 
-type ComparisonRow = {
-  brand: string;
-  isMine: boolean;
-  avgPosition: number;
-  mentionRate: number;
-  linkRate: number;
-  url: string;
-};
+// General GEO practices; they are not derived from a specific page analysis.
+const GENERAL_TIPS = [
+  "הוסף מקטע שאלות ותשובות בניסוח טבעי, כפי שגולשים שואלים את מנועי ה-AI.",
+  "חלק את התוכן לכותרות H2/H3 לפי תת-נושאים ברורים.",
+  "הוסף טבלאות ונתונים מדויקים – מודלי AI מצטטים נתונים מובנים.",
+  "שמור על תאריך עדכון ודוגמאות עדכניות לשנה הנוכחית.",
+  "התאם את כותרת העמוד לניסוח השאלה הנפוצה.",
+];
+
+type Loss = { questionId: string; question: string; source: string; mine: number | null; rival: number };
 
 function ComparisonPage() {
-  const { brands, topics, answers } = Route.useLoaderData();
+  const { brands, answers } = Route.useLoaderData();
   const [domain, setDomain] = useState("all");
-  const [openRival, setOpenRival] = useState<ComparisonRow | null>(null);
-  const [myUrl, setMyUrl] = useState("https://mysite.co.il/travel-insurance");
-  const [rivalUrl, setRivalUrl] = useState("");
+  const [openRival, setOpenRival] = useState<BrandRow | null>(null);
 
+  const typedAnswers = answers as unknown as MetricsAnswer[];
   const myBrand = brands.find((b) => b.is_mine);
-  const myBrandName = myBrand?.name ?? MY_BRAND;
+  const myBrandName = myBrand?.name ?? "המותג שלי";
 
-  const rows = useMemo<ComparisonRow[]>(() => {
-    const questionDomainMap = new Map<string, string>();
-    for (const t of topics) {
-      for (const q of (t as unknown as { questions?: { id: string }[] }).questions ?? []) {
-        questionDomainMap.set(q.id, t.domain_id);
-      }
-    }
-
-    const byBrand = new Map<
-      string,
-      { brand: string; isMine: boolean; url: string; positions: number[]; mentions: number; links: number; answered: number }
-    >();
-
-    for (const answer of answers as unknown as {
-      question_id: string;
-      questions: { topic_id: string; topics: { domain_id: string } | null } | null;
-      answer_rankings: {
-        brand_id: string;
-        position: number | null;
-        mentioned: boolean;
-        has_link: boolean;
-        brands: { id: string; name: string; is_mine: boolean; website_url: string | null } | null;
-      }[];
-    }[]) {
-      const answerDomain = answer.questions?.topics?.domain_id ?? "all";
-      if (domain !== "all" && answerDomain !== domain) continue;
-
-      for (const r of answer.answer_rankings) {
-        if (!r.brands) continue;
-        const existing = byBrand.get(r.brands.id) ?? {
-          brand: r.brands.name,
-          isMine: r.brands.is_mine,
-          url: r.brands.website_url ?? "",
-          positions: [],
-          mentions: 0,
-          links: 0,
-          answered: 0,
-        };
-        existing.answered += 1;
-        if (r.mentioned) {
-          existing.mentions += 1;
-          if (r.position !== null) existing.positions.push(r.position);
-          if (r.has_link) existing.links += 1;
-        }
-        byBrand.set(r.brands.id, existing);
-      }
-    }
-
-    return Array.from(byBrand.values())
-      .map((r) => ({
-        brand: r.brand,
-        isMine: r.isMine,
-        url: r.url,
-        avgPosition: r.positions.length > 0 ? r.positions.reduce((a, b) => a + b, 0) / r.positions.length : 0,
-        mentionRate: r.answered > 0 ? Math.round((r.mentions / r.answered) * 100) : 0,
-        linkRate: r.mentions > 0 ? Math.round((r.links / r.mentions) * 100) : 0,
-      }))
-      .sort((a, b) => {
-        if (a.avgPosition === 0 && b.avgPosition === 0) return b.mentionRate - a.mentionRate;
-        if (a.avgPosition === 0) return 1;
-        if (b.avgPosition === 0) return -1;
-        return a.avgPosition - b.avgPosition;
-      });
-  }, [answers, domain, topics]);
-
+  const rows = useMemo(() => computeBrandRows(brands, typedAnswers, domain), [brands, typedAnswers, domain]);
+  const hasAnswers = answersInDomain(typedAnswers, domain).length > 0;
   const myIndex = rows.findIndex((r) => r.isMine);
 
+  // Answers in scope where the rival is ranked above my brand (or I'm not mentioned at all)
+  const losses = useMemo<Loss[]>(() => {
+    if (!openRival || !myBrand) return [];
+    return answersInDomain(typedAnswers, domain).flatMap((a) => {
+      const rival = a.answer_rankings.find((r) => r.brand_id === openRival.id);
+      const mine = a.answer_rankings.find((r) => r.brand_id === myBrand.id);
+      if (!rival?.mentioned || rival.position === null) return [];
+      const minePos = mine?.mentioned ? mine.position : null;
+      if (minePos !== null && minePos < rival.position) return [];
+      return [
+        {
+          questionId: a.question_id,
+          question: a.questions?.text ?? "",
+          source: a.source,
+          mine: minePos,
+          rival: rival.position,
+        },
+      ];
+    });
+  }, [openRival, myBrand, typedAnswers, domain]);
+
   return (
-    <AppShell title="השוואה לפי תחום" subtitle="דירוג משוקלל של המותג שלך מול המתחרים">
+    <AppShell title="השוואה לפי תחום" subtitle="דירוג המותג שלך מול המתחרים">
       <div className="mb-6 flex flex-wrap gap-2">
         {DOMAINS.map((d) => (
           <button
@@ -133,9 +92,9 @@ function ComparisonPage() {
         ))}
       </div>
 
-      {rows.length === 0 ? (
+      {!hasAnswers ? (
         <div className="surface-card p-6 text-center text-sm text-muted-foreground">
-          אין עדיין נתונים להשוואה. הפעל סריקה ידנית כדי לקבל תוצאות אמיתיות.
+          אין עדיין נתונים להשוואה בתחום הזה. הפעל סריקה ידנית כדי לקבל תוצאות אמיתיות.
         </div>
       ) : (
         <div className="surface-card mb-6 overflow-x-auto">
@@ -144,8 +103,8 @@ function ComparisonPage() {
               <tr className="border-b border-border text-right text-xs text-muted-foreground">
                 <th className="p-4 font-medium">#</th>
                 <th className="p-4 font-medium">מותג</th>
-                <th className="p-4 font-medium">מיקום ממוצע</th>
                 <th className="p-4 font-medium">שיעור אזכורים</th>
+                <th className="p-4 font-medium">מיקום ממוצע</th>
                 <th className="p-4 font-medium">שיעור קישורים</th>
                 <th className="p-4 font-medium"></th>
               </tr>
@@ -153,7 +112,7 @@ function ComparisonPage() {
             <tbody>
               {rows.map((r, i) => (
                 <tr
-                  key={r.brand}
+                  key={r.id}
                   className={`border-b border-border last:border-0 ${r.isMine ? "bg-primary/5" : ""}`}
                 >
                   <td className="p-4 font-bold text-muted-foreground">{i + 1}</td>
@@ -161,25 +120,18 @@ function ComparisonPage() {
                     {r.brand}
                     {r.isMine ? <span className="mr-2 text-xs font-normal text-primary">(אני)</span> : null}
                   </td>
-                  <td className="p-4 text-primary font-semibold">
-                    {r.avgPosition > 0 ? r.avgPosition.toFixed(1) : "—"}
-                  </td>
                   <td className="p-4">
                     <Bar value={r.mentionRate} color="var(--color-chart-2)" />
+                  </td>
+                  <td className="p-4 text-primary font-semibold">
+                    {r.avgPosition > 0 ? r.avgPosition.toFixed(1) : "—"}
                   </td>
                   <td className="p-4">
                     <Bar value={r.linkRate} color="var(--color-chart-3)" />
                   </td>
                   <td className="p-4 text-left">
                     {!r.isMine && myIndex > -1 && i < myIndex ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setOpenRival(r);
-                          setRivalUrl(r.url);
-                        }}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => setOpenRival(r)}>
                         <HelpCircle className="h-4 w-4" />
                         למה הוא לפניי?
                       </Button>
@@ -197,10 +149,10 @@ function ComparisonPage() {
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-lg font-black">
-                למה {openRival.brand} מקדים את {myBrandName}?
+                איפה {openRival.brand} מקדים את {myBrandName}?
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                השוואת העמוד שלך מול העמוד של המתחרה לפי הקריטריונים שמנועי AI מסתמכים עליהם
+                התשובות שבהן {openRival.brand} דורג מעליך או שאתה לא הוזכרת בכלל
               </p>
             </div>
             <Button variant="ghost" size="icon" onClick={() => setOpenRival(null)}>
@@ -208,54 +160,40 @@ function ComparisonPage() {
             </Button>
           </div>
 
-          <div className="mb-6 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                כתובת העמוד שלי
-              </label>
-              <Input value={myUrl} onChange={(e) => setMyUrl(e.target.value)} dir="ltr" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                כתובת העמוד של המתחרה
-              </label>
-              <Input value={rivalUrl} onChange={(e) => setRivalUrl(e.target.value)} dir="ltr" />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {COMPARE_CRITERIA.map((c) => (
-              <div key={c.label} className="rounded-xl border border-border p-4">
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-semibold">{c.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    אני {c.mine} · {openRival.brand} {c.rival}
-                  </p>
-                </div>
-                <div className="mb-1.5 flex items-center gap-2">
-                  <span className="w-10 shrink-0 text-xs text-muted-foreground">אני</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${c.mine}%` }} />
-                  </div>
-                </div>
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="w-10 shrink-0 text-xs text-muted-foreground">מתחרה</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
-                    <div className="h-full rounded-full bg-brandpurple" style={{ width: `${c.rival}%` }} />
-                  </div>
-                </div>
-                <p className="text-xs leading-6 text-muted-foreground">{c.note}</p>
-              </div>
-            ))}
-          </div>
+          {losses.length > 0 ? (
+            <ul className="space-y-2">
+              {losses.map((l) => (
+                <li
+                  key={`${l.questionId}-${l.source}`}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3.5 text-sm"
+                >
+                  <Link
+                    to="/answers/$questionId"
+                    params={{ questionId: l.questionId }}
+                    className="min-w-0 flex-1 truncate font-medium hover:text-primary"
+                  >
+                    {l.question}
+                  </Link>
+                  <span className="shrink-0 rounded-lg bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
+                    {sourceName(l.source)}
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {openRival.brand}: מקום {l.rival} · אני: {l.mine ? `מקום ${l.mine}` : "לא הוזכרתי"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">לא נמצאו תשובות כאלה בתחום הנבחר.</p>
+          )}
 
           <div className="mt-6 rounded-xl bg-secondary p-5">
             <h3 className="mb-3 flex items-center gap-2 text-base font-bold">
               <Lightbulb className="h-4.5 w-4.5 text-primary" />
-              מה לשנות בעמוד שלי
+              המלצות כלליות לשיפור נראות בתשובות AI
             </h3>
             <ol className="space-y-2.5">
-              {ACTIONS.map((a, i) => (
+              {GENERAL_TIPS.map((a, i) => (
                 <li key={a} className="flex gap-3 text-sm leading-6">
                   <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">
                     {i + 1}

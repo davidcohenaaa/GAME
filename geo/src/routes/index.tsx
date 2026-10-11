@@ -12,7 +12,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getDashboardData } from "@/lib/geo.functions";
-import { DOMAINS, SOURCES } from "@/data/mock";
+import { DOMAINS, domainName } from "@/lib/catalog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -49,61 +49,41 @@ function Kpi({ label, value, hint, tone }: { label: string; value: string; hint:
 function Dashboard() {
   const data = Route.useLoaderData();
   const [domain, setDomain] = useState("all");
-  const [source, setSource] = useState("all");
-  const [competitor, setCompetitor] = useState("all");
   const [range, setRange] = useState("90");
 
   const myBrandName = data.myBrand?.name ?? "המותג שלי";
   const hasData = data.metrics.questionCount > 0;
-  const hasAnswers = data.metrics.mentionRate > 0 || data.metrics.avgPosition > 0;
-
-  const rows = useMemo(() => {
-    return data.brands.map((b) => ({
-      brand: b.name,
-      isMine: b.is_mine,
-      url: b.website_url ?? "",
-    }));
-  }, [data.brands]);
 
   const trend = useMemo(() => {
-    if (data.trend.length > 0) {
-      const n = range === "30" ? 3 : range === "90" ? 6 : 12;
-      return data.trend.slice(-n);
-    }
-    if (!hasAnswers) return [];
-    return [{ month: new Date().toISOString().slice(0, 7), position: data.metrics.avgPosition }];
-  }, [data.trend, range, hasAnswers, data.metrics.avgPosition]);
+    const from = new Date(Date.now() - Number(range) * 86400000).toISOString().slice(0, 10);
+    return data.trend.filter((t) => t.date >= from && t.position > 0);
+  }, [data.trend, range]);
 
   const breakdown = useMemo(() => {
     if (domain === "all") {
       return data.metrics.domainBreakdown
         .filter((d) => d.domainId !== "all")
         .map((d) => ({
-          domain: DOMAINS.find((x) => x.id === d.domainId)?.name ?? d.domainId,
+          domain: domainName(d.domainId),
           rate: d.rate,
         }));
     }
     const item = data.metrics.domainBreakdown.find((d) => d.domainId === domain);
     return item
-      ? [{ domain: DOMAINS.find((x) => x.id === domain)?.name ?? domain, rate: item.rate }]
+      ? [{ domain: domainName(domain), rate: item.rate }]
       : [];
   }, [data.metrics.domainBreakdown, domain]);
+
+  const scoped = data.metrics.domainBreakdown.find((d) => d.domainId === domain);
 
   return (
     <AppShell
       title="לוח בקרה"
       subtitle={`איך ${myBrandName} נראית בתשובות של מנועי AI – מבט מהיר`}
     >
-      <div className="surface-card mb-6 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="surface-card mb-6 grid gap-3 p-4 sm:grid-cols-2">
         <Filter label="נושא / תחום" value={domain} onChange={setDomain}
           options={DOMAINS.map((d) => ({ value: d.id, label: d.name }))} />
-        <Filter label="מנוע / מקור" value={source} onChange={setSource}
-          options={[{ value: "all", label: "כל המקורות" }, ...SOURCES.map((s) => ({ value: s.id, label: s.name }))]} />
-        <Filter label="מתחרים" value={competitor} onChange={setCompetitor}
-          options={[
-            { value: "all", label: "כל המתחרים" },
-            ...rows.filter((r) => !r.isMine).map((r) => ({ value: r.brand, label: r.brand })),
-          ]} />
         <Filter label="טווח זמן" value={range} onChange={setRange}
           options={[
             { value: "30", label: "30 ימים אחרונים" },
@@ -114,9 +94,11 @@ function Dashboard() {
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="נושאים במעקב" value={String(data.metrics.topicCount)} hint="פעילים כרגע" tone="text-foreground" />
-        <Kpi label="שאלות במעקב" value={String(data.metrics.questionCount)} hint="נבדקות מדי שבוע" tone="text-foreground" />
-        <Kpi label="ממוצע אזכורים" value={`${data.metrics.mentionRate}%`} hint="מהתשובות מזכירות אותך" tone="text-success" />
-        <Kpi label="מיקום ממוצע" value={data.metrics.avgPosition.toFixed(1)} hint="מתוך המותגים המוזכרים" tone="text-primary" />
+        <Kpi label="שאלות במעקב" value={String(data.metrics.questionCount)} hint="נשאלות בכל סריקה" tone="text-foreground" />
+        <Kpi label="ממוצע אזכורים" value={scoped ? `${scoped.rate}%` : "—"}
+          hint={domain === "all" ? `מתוך ${data.metrics.answerCount} תשובות שנאספו` : domainName(domain)} tone="text-success" />
+        <Kpi label="מיקום ממוצע" value={scoped?.avgPosition ? scoped.avgPosition.toFixed(1) : "—"}
+          hint="בתשובות שבהן הוזכרת" tone="text-primary" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
@@ -134,9 +116,9 @@ function Dashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={12}
+                  <XAxis dataKey="date" tickLine={false} axisLine={false} fontSize={12}
                     stroke="var(--color-muted-foreground)" />
-                  <YAxis reversed domain={[1, 6]} tickLine={false} axisLine={false} fontSize={12}
+                  <YAxis reversed domain={[1, "dataMax"]} allowDecimals={false} tickLine={false} axisLine={false} fontSize={12}
                     stroke="var(--color-muted-foreground)" width={28} />
                   <Tooltip
                     contentStyle={{

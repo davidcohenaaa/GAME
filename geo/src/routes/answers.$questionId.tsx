@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle2, Link2, XCircle } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { getAnswerDetail } from "@/lib/geo.functions";
-import { SOURCES, type SourceId } from "@/data/mock";
+import { SOURCES, sourceName, type SourceId } from "@/lib/catalog";
 
 export const Route = createFileRoute("/answers/$questionId")({
   loader: async ({ params }) => {
@@ -121,7 +121,7 @@ function AnswerPage() {
           {source === "all" ? (
             <div className="surface-card p-6">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-base font-bold">תשובה משוקללת מכל המקורות</h3>
+                <h3 className="text-base font-bold">התשובות מכל המקורות</h3>
                 <span className="rounded-lg bg-brandpurple/10 px-2.5 py-1 text-xs font-medium text-brandpurple">
                   {sourceAnswers.length} מקורות
                 </span>
@@ -130,8 +130,8 @@ function AnswerPage() {
                 <div className="space-y-4">
                   {sourceAnswers.map((a) => (
                     <div key={a.id} className="rounded-xl border border-border p-4">
-                      <p className="mb-1 text-xs font-semibold text-primary">{a.source}</p>
-                      <p className="text-sm leading-7 text-muted-foreground">{a.summary}</p>
+                      <p className="mb-1 text-xs font-semibold text-primary">{sourceName(a.source)}</p>
+                      <p className="line-clamp-6 whitespace-pre-line text-sm leading-7 text-muted-foreground">{a.summary}</p>
                     </div>
                   ))}
                 </div>
@@ -143,9 +143,13 @@ function AnswerPage() {
             visibleAnswers.map((a) => (
               <div key={a.id} className="surface-card p-6">
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="text-base font-bold">{SOURCES.find((s) => s.id === a.source)?.name ?? a.source}</h3>
+                  <h3 className="text-base font-bold">{sourceName(a.source)}</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(a.collected_at).toLocaleString("he-IL")}
+                  </span>
                 </div>
-                <p className="text-sm leading-7 text-muted-foreground">{a.summary}</p>
+                <p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{a.summary}</p>
+                <Citations raw={a.raw_response} />
               </div>
             ))
           )}
@@ -236,6 +240,31 @@ function Verdict({ label, value, ok }: { label: string; value: string; ok: boole
         )}
         <span className={`text-lg font-bold ${ok ? "text-success" : "text-foreground"}`}>{value}</span>
       </div>
+    </div>
+  );
+}
+
+function Citations({ raw }: { raw: string | null }) {
+  let links: { url: string; title?: string | null }[] = [];
+  try {
+    links = raw ? ((JSON.parse(raw) as { citations?: typeof links }).citations ?? []) : [];
+  } catch {
+    links = [];
+  }
+  const unique = [...new Map(links.map((l) => [l.url, l])).values()];
+  if (unique.length === 0) return null;
+  return (
+    <div className="mt-4 border-t border-border pt-3">
+      <p className="mb-2 text-xs font-semibold text-muted-foreground">מקורות שצוטטו</p>
+      <ul className="space-y-1">
+        {unique.map((l) => (
+          <li key={l.url} className="truncate text-xs" dir="ltr">
+            <a href={l.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+              {l.title || l.url}
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

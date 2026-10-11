@@ -58,6 +58,7 @@ export type Database = {
       }
       brands: {
         Row: {
+          aliases: string[]
           created_at: string
           id: string
           is_mine: boolean
@@ -65,6 +66,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          aliases?: string[]
           created_at?: string
           id?: string
           is_mine?: boolean
@@ -72,6 +74,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          aliases?: string[]
           created_at?: string
           id?: string
           is_mine?: boolean

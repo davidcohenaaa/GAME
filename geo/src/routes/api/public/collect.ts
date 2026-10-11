@@ -16,14 +16,6 @@ export const Route = createFileRoute("/api/public/collect")({
           });
         }
 
-        const key = process.env["LOVABLE_API_KEY"];
-        if (!key) {
-          return new Response(JSON.stringify({ error: "Missing LOVABLE_API_KEY" }), {
-            status: 500,
-            headers: { "content-type": "application/json" },
-          });
-        }
-
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const [settings, questions] = await Promise.all([
           getSettings(supabaseAdmin),
@@ -41,7 +33,7 @@ export const Route = createFileRoute("/api/public/collect")({
         const runId = await createCollectionRun(supabaseAdmin, questions.length);
 
         // Fire-and-forget collection; cron callers don't need to wait
-        runCollection(supabaseAdmin, key, activeSourceIds, runId).catch((err) => {
+        runCollection(supabaseAdmin, activeSourceIds, runId).catch((err) => {
           console.error("Cron collection failed", err);
           updateCollectionRun(supabaseAdmin, runId, {
             status: "failed",

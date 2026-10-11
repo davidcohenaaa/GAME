@@ -6,6 +6,7 @@ export type Brand = {
   name: string;
   website_url: string | null;
   is_mine: boolean;
+  aliases: string[];
 };
 
 export type Topic = {
@@ -40,7 +41,7 @@ export type AnswerRanking = {
 };
 
 export async function getBrands(supabase: SupabaseClient<Database>): Promise<Brand[]> {
-  const { data, error } = await supabase.from("brands").select("id, name, website_url, is_mine").order("name");
+  const { data, error } = await supabase.from("brands").select("id, name, website_url, is_mine, aliases").order("name");
   if (error) throw error;
   return data ?? [];
 }
@@ -73,7 +74,7 @@ export async function getSourceAnswersForQuestion(
   const { data, error } = await supabase
     .from("source_answers")
     .select(
-      "id, question_id, source, summary, raw_response, collected_at, answer_rankings(id, source_answer_id, brand_id, position, mentioned, has_link, brands(id, name, website_url, is_mine))",
+      "id, question_id, source, summary, raw_response, collected_at, answer_rankings(id, source_answer_id, brand_id, position, mentioned, has_link, brands(id, name, website_url, is_mine, aliases))",
     )
     .eq("question_id", questionId);
   if (error) throw error;

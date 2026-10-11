@@ -1,27 +1,41 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { RANKING } from "@/data/mock";
+import { getComparisonData } from "@/lib/geo.functions";
+import { computeBrandRows, type MetricsAnswer } from "@/lib/metrics";
 
 export const Route = createFileRoute("/competitors")({
   head: () => ({
     meta: [
       { title: "מתחרים | GEO" },
-      { name: "description", content: "רשימת המתחרים במעקב, כתובות העמודים ונתוני הנראות שלהם." },
+      { name: "description", content: "רשימת המתחרים במעקב, כתובות האתרים ונתוני הנראות שלהם." },
       { property: "og:title", content: "מתחרים | GEO" },
       { property: "og:description", content: "רשימת המתחרים במעקב ונתוני הנראות שלהם." },
     ],
   }),
+  loader: async () => {
+    const data = await getComparisonData();
+    return data;
+  },
   component: CompetitorsPage,
 });
 
 function CompetitorsPage() {
-  const rows = RANKING["all"] ?? [];
+  const { brands, answers } = Route.useLoaderData();
+  const rows = computeBrandRows(brands, answers as unknown as MetricsAnswer[]);
+  const aliasesById = new Map(brands.map((b) => [b.id, b.aliases]));
+  const hasAnswers = answers.length > 0;
+
   return (
     <AppShell title="מתחרים" subtitle="המותגים שהמערכת עוקבת אחריהם בתשובות AI">
+      {!hasAnswers ? (
+        <div className="surface-card mb-6 p-4 text-center text-sm text-muted-foreground">
+          עדיין לא נאספו תשובות – המדדים יתמלאו אחרי הסריקה הראשונה.
+        </div>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         {rows.map((r) => (
-          <div key={r.brand} className="surface-card p-5">
+          <div key={r.id} className="surface-card p-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="truncate text-base font-bold">{r.brand}</p>
               {r.isMine ? (
@@ -30,14 +44,17 @@ function CompetitorsPage() {
                 </span>
               ) : null}
             </div>
-            <p dir="ltr" className="mb-4 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+            <p dir="ltr" className="mb-2 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
               <Link2 className="h-3.5 w-3.5 shrink-0" />
-              {r.url}
+              {r.url || "—"}
+            </p>
+            <p className="mb-4 truncate text-xs text-muted-foreground">
+              שמות מזוהים: {(aliasesById.get(r.id) ?? []).join(" · ") || r.brand}
             </p>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <Metric label="מיקום" value={r.avgPosition.toFixed(1)} tone="text-primary" />
-              <Metric label="אזכורים" value={`${r.mentionRate}%`} tone="text-success" />
-              <Metric label="קישורים" value={`${r.linkRate}%`} tone="text-brandpurple" />
+              <Metric label="אזכורים" value={hasAnswers ? `${r.mentionRate}%` : "—"} tone="text-success" />
+              <Metric label="מיקום" value={r.avgPosition > 0 ? r.avgPosition.toFixed(1) : "—"} tone="text-primary" />
+              <Metric label="קישורים" value={hasAnswers ? `${r.linkRate}%` : "—"} tone="text-brandpurple" />
             </div>
           </div>
         ))}

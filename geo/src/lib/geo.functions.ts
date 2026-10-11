@@ -49,8 +49,8 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(async 
       .select("snapshot_date, domain_id, metric_name, metric_value")
       .eq("metric_name", "mine_avg_position")
       .eq("domain_id", "all")
-      .order("snapshot_date", { ascending: true })
-      .limit(12),
+      .gte("snapshot_date", new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10))
+      .order("snapshot_date", { ascending: true }),
   ]);
 
   const myBrand = brands.find((b) => b.is_mine);
@@ -67,68 +67,47 @@ export const getDashboardData = createServerFn({ method: "GET" }).handler(async 
     }[];
   }[];
 
-  const byDomain = new Map<
-    string,
-    { positions: number[]; minePositions: number[]; mineMentions: number; mineLinks: number; answerCount: number }
-  >();
+  type Bucket = { minePositions: number[]; mineMentions: number; mineLinks: number; answerCount: number };
+  const byDomain = new Map<string, Bucket>();
+  const bucketFor = (id: string) => {
+    if (!byDomain.has(id)) byDomain.set(id, { minePositions: [], mineMentions: 0, mineLinks: 0, answerCount: 0 });
+    return byDomain.get(id)!;
+  };
 
   for (const answer of allAnswers) {
-    const domainId = answer.questions?.topics?.domain_id ?? "all";
-    if (!byDomain.has(domainId)) {
-      byDomain.set(domainId, {
-        positions: [],
-        minePositions: [],
-        mineMentions: 0,
-        mineLinks: 0,
-        answerCount: 0,
-      });
-    }
-    const bucket = byDomain.get(domainId)!;
-    bucket.answerCount++;
-
-    const mentioned = answer.answer_rankings.filter((r) => r.mentioned);
-    bucket.positions.push(...mentioned.map((r) => r.position).filter((p): p is number => p !== null));
-
+    const domainId = answer.questions?.topics?.domain_id;
     const mine = answer.answer_rankings.find((r) => r.brands?.is_mine);
-    if (mine?.mentioned) {
-      bucket.mineMentions++;
-      if (mine.position !== null) bucket.minePositions.push(mine.position);
-      if (mine.has_link) bucket.mineLinks++;
+    // Every answer counts toward "all" and toward its own domain
+    for (const bucket of domainId ? [bucketFor("all"), bucketFor(domainId)] : [bucketFor("all")]) {
+      bucket.answerCount++;
+      if (mine?.mentioned) {
+        bucket.mineMentions++;
+        if (mine.position !== null) bucket.minePositions.push(mine.position);
+      }
+      if (mine?.has_link) bucket.mineLinks++;
     }
   }
 
-  const allBucket = byDomain.get("all") ?? {
-    positions: [],
-    minePositions: [],
-    mineMentions: 0,
-    mineLinks: 0,
-    answerCount: 0,
-  };
+  const avg = (xs: number[]) => (xs.length > 0 ? Number((xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1)) : 0);
+  const rate = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0);
+  const allBucket = bucketFor("all");
 
   const metrics = {
     topicCount: topics.length,
     questionCount: questions.length,
-    avgPosition:
-      allBucket.minePositions.length > 0
-        ? Number((allBucket.minePositions.reduce((a, b) => a + b, 0) / allBucket.minePositions.length).toFixed(1))
-        : 0,
-    mentionRate:
-      allBucket.answerCount > 0 ? Math.round((allBucket.mineMentions / allBucket.answerCount) * 100) : 0,
-    linkRate:
-      allBucket.mineMentions > 0 ? Math.round((allBucket.mineLinks / allBucket.mineMentions) * 100) : 0,
+    answerCount: allBucket.answerCount,
+    avgPosition: avg(allBucket.minePositions),
+    mentionRate: rate(allBucket.mineMentions, allBucket.answerCount),
+    linkRate: rate(allBucket.mineLinks, allBucket.answerCount),
     domainBreakdown: Array.from(byDomain.entries()).map(([domainId, bucket]) => ({
       domainId,
-      rate:
-        bucket.answerCount > 0 ? Math.round((bucket.mineMentions / bucket.answerCount) * 100) : 0,
-      avgPosition:
-        bucket.minePositions.length > 0
-          ? Number((bucket.minePositions.reduce((a, b) => a + b, 0) / bucket.minePositions.length).toFixed(1))
-          : 0,
+      rate: rate(bucket.mineMentions, bucket.answerCount),
+      avgPosition: avg(bucket.minePositions),
     })),
   };
 
   const trend = (snapshots.data ?? []).map((s) => ({
-    month: s.snapshot_date.slice(0, 7),
+    date: s.snapshot_date,
     position: Number(s.metric_value),
   }));
 
@@ -289,9 +268,10 @@ export const getComparisonData = createServerFn({ method: "GET" }).handler(async
     supabaseAdmin
       .from("source_answers")
       .select(
-        "id, question_id, questions(topic_id, topics(domain_id)), answer_rankings(brand_id, position, mentioned, has_link, brands(is_mine))",
+        "id, question_id, source, questions(text, topic_id, topics(domain_id)), answer_rankings(brand_id, position, mentioned, has_link)",
       ),
   ]);
+  if (answers.error) throw answers.error;
   return { brands, topics, answers: answers.data ?? [] };
 });
 
@@ -303,7 +283,7 @@ export const getSettingsData = createServerFn({ method: "GET" }).handler(async (
     id: s.id,
     label: s.label,
     available: isSourceReady(s),
-    requiresKey: s.envKey ?? null,
+    requiresKey: s.envKey,
   }));
   return { settings, sources };
 });
@@ -324,9 +304,6 @@ export const updateSettings = createServerFn({ method: "POST" })
   });
 
 export const runManualCollection = createServerFn({ method: "POST" }).handler(async () => {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("Missing LOVABLE_API_KEY");
-
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { isSourceReady } = await import("./collector.server");
   const settings = await getSettings(supabaseAdmin);
@@ -342,7 +319,7 @@ export const runManualCollection = createServerFn({ method: "POST" }).handler(as
   const runId = await createCollectionRun(supabaseAdmin, questions.length);
 
   // Run collection in the background so the request returns immediately
-  runCollection(supabaseAdmin, key, activeSourceIds, runId).catch((err) => {
+  runCollection(supabaseAdmin, activeSourceIds, runId).catch((err) => {
     console.error("Collection failed", err);
     updateCollectionRun(supabaseAdmin, runId, {
       status: "failed",
@@ -365,7 +342,9 @@ export const setupDailyCron = createServerFn({ method: "POST" }).handler(async (
   const secret = process.env["COLLECT_CRON_SECRET"];
   if (!secret) throw new Error("Missing COLLECT_CRON_SECRET");
 
-  const url = "https://project--dde422ef-646d-4217-81c7-da29bc2bc9a4.lovable.app/api/public/collect";
+  const appUrl = process.env["APP_URL"];
+  if (!appUrl) throw new Error("Missing APP_URL");
+  const url = new URL("/api/public/collect", appUrl).toString();
 
   const { error } = await supabaseAdmin.rpc("schedule_geo_collection", {
     p_url: url,

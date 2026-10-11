@@ -1,11 +1,7 @@
-import { generateText, Output, NoObjectGeneratedError } from "ai";
-import { z } from "zod";
-import {
-  createLovableAiGatewayProvider,
-  createLovableResponsesProvider,
-} from "./ai-gateway.server";
+import Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
+import { matchBrands, type MatchBrand } from "./brand-match";
 import {
   getBrands,
   getQuestions,
@@ -15,302 +11,265 @@ import {
   computeSnapshot,
 } from "./geo.server";
 
-const RankingSchema = z.object({
-  summary: z.string(),
-  brands: z.array(
-    z.object({
-      name: z.string(),
-      position: z.number().nullable(),
-      mentioned: z.boolean(),
-      has_link: z.boolean(),
-    }),
-  ),
-});
-
-export type SourceKind = "gateway-openai" | "gateway-chat" | "anthropic" | "serp";
-
 export type SourceConfig = {
   id: string;
-  model: string;
   label: string;
-  kind: SourceKind;
-  /** Env var holding the external API key, when the source is not served by Lovable AI. */
-  envKey?: string;
+  /** Env var holding the provider API key. */
+  envKey: string;
+  /** Env var that overrides the default model. */
+  modelEnv?: string;
+  defaultModel?: string;
 };
 
 export const SUPPORTED_SOURCES: SourceConfig[] = [
-  { id: "gemini", model: "google/gemini-3.7-flash", label: "Gemini", kind: "gateway-chat" },
-  { id: "chatgpt", model: "openai/gpt-5.6-sol", label: "ChatGPT", kind: "gateway-openai" },
+  { id: "chatgpt", label: "ChatGPT", envKey: "OPENAI_API_KEY", modelEnv: "OPENAI_MODEL", defaultModel: "gpt-5" },
+  {
+    id: "gemini",
+    label: "Gemini",
+    envKey: "GEMINI_API_KEY",
+    modelEnv: "GEMINI_MODEL",
+    defaultModel: "gemini-flash-latest",
+  },
   {
     id: "claude",
-    model: "anthropic/claude-sonnet-5",
     label: "Claude",
-    kind: "anthropic",
+    envKey: "ANTHROPIC_API_KEY",
+    modelEnv: "CLAUDE_MODEL",
+    defaultModel: "claude-opus-5-5",
   },
-  {
-    id: "google",
-    model: "serpapi/google-ai-overview",
-    label: "Google AI Overview",
-    kind: "serp",
-    envKey: "SERPAPI_API_KEY",
-  },
+  { id: "google", label: "Google AI Overview", envKey: "SERPAPI_API_KEY" },
 ];
 
 export function isSourceReady(source: SourceConfig) {
-  if (!source.envKey) return true;
   return Boolean(process.env[source.envKey]);
 }
 
-const OUTPUT_SPEC = `Return a JSON object with:
-- "summary": a concise Hebrew summary of the answer, focusing on which brands are recommended and why. Under 150 words.
-- "brands": an array with one object per tracked brand:
-  - "name": the brand name exactly as listed
-  - "position": the brand's rank in the answer (1 = first). null if not mentioned.
-  - "mentioned": true/false
-  - "has_link": true if the answer links to the brand's website
-
-Rules: use the exact brand names, valid JSON only, summary in Hebrew.`;
-
-function buildPrompt(question: string, brandNames: string[]) {
-  return `You are analyzing how different insurance brands appear in AI-generated answers to the following Hebrew question.
-
-Question: "${question}"
-
-Tracked brands: ${brandNames.join(", ")}
-
-${OUTPUT_SPEC}`;
+function modelFor(source: SourceConfig) {
+  return (source.modelEnv && process.env[source.modelEnv]) || source.defaultModel || "";
 }
 
-function buildAnalysisPrompt(question: string, brandNames: string[], answerText: string) {
-  return `Below is the real answer text produced for a Hebrew question. Analyze it — do not invent content.
+type Citation = { url: string; title?: string | null | undefined };
+type SourceResult = { text: string; citations: Citation[]; model: string };
 
-Question: "${question}"
-
-Tracked brands: ${brandNames.join(", ")}
-
-Answer text:
-"""
-${answerText.slice(0, 12000)}
-"""
-
-${OUTPUT_SPEC}`;
+// Asked the way a user in Israel would ask: in Hebrew, no hint about which brands we track.
+function userPrompt(question: string) {
+  return `${question}\n\nענה בעברית.`;
 }
 
-/** Structure arbitrary answer text into the ranking schema using Gemini through Lovable AI. */
-async function structureText(
-  apiKey: string,
-  question: string,
-  brandNames: string[],
-  answerText: string,
-) {
-  const gateway = createLovableAiGatewayProvider(apiKey);
-  const { output } = await generateText({
-    model: gateway("google/gemini-3.7-flash"),
-    output: Output.object({ schema: RankingSchema }),
-    prompt: buildAnalysisPrompt(question, brandNames, answerText),
-  });
-  return output;
-}
-
-/** Claude via Lovable AI Gateway native Messages API (streamed). */
-async function callAnthropic(source: SourceConfig, apiKey: string, question: string) {
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/messages", {
+/** ChatGPT: OpenAI Responses API with web search, like ChatGPT with search on. */
+async function askChatGpt(source: SourceConfig, question: string): Promise<SourceResult> {
+  const model = modelFor(source);
+  const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "Lovable-API-Key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "X-Lovable-AIG-SDK": "fetch",
+      authorization: `Bearer ${process.env[source.envKey]}`,
     },
     body: JSON.stringify({
-      model: source.model,
-      max_tokens: 2048,
-      stream: true,
-      messages: [{ role: "user", content: `${question}\n\nענה בעברית בצורה מלאה ומפורטת.` }],
+      model,
+      input: userPrompt(question),
+      tools: [{ type: "web_search", user_location: { type: "approximate", country: "IL" } }],
     }),
   });
+  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${(await res.text()).slice(0, 300)}`);
 
-  if (!res.ok || !res.body) {
-    throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  }
+  const json = (await res.json()) as {
+    output?: {
+      type: string;
+      content?: { type: string; text?: string; annotations?: { type: string; url?: string; title?: string }[] }[];
+    }[];
+  };
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
   let text = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      try {
-        const evt = JSON.parse(line.slice(5).trim()) as {
-          type?: string;
-          delta?: { type?: string; text?: string };
-        };
-        if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
-          text += evt.delta.text ?? "";
-        }
-      } catch {
-        // ignore keep-alive / partial lines
+  const citations: Citation[] = [];
+  for (const item of json.output ?? []) {
+    if (item.type !== "message") continue;
+    for (const part of item.content ?? []) {
+      if (part.type !== "output_text") continue;
+      text += part.text ?? "";
+      for (const a of part.annotations ?? []) {
+        if (a.type === "url_citation" && a.url) citations.push({ url: a.url, title: a.title });
       }
     }
   }
-  return text.trim();
+  return { text: text.trim(), citations, model };
 }
 
-/** Google AI Overview via SerpAPI (requires SERPAPI_API_KEY). */
-async function callGoogleAiOverview(question: string) {
-  const key = process.env["SERPAPI_API_KEY"];
-  if (!key) throw new Error("Missing SERPAPI_API_KEY");
+/** Gemini: generateContent grounded with Google Search. */
+async function askGemini(source: SourceConfig, question: string): Promise<SourceResult> {
+  const model = modelFor(source);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-goog-api-key": process.env[source.envKey] ?? "",
+    },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: userPrompt(question) }] }],
+      tools: [{ google_search: {} }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
 
+  const json = (await res.json()) as {
+    candidates?: {
+      content?: { parts?: { text?: string }[] };
+      groundingMetadata?: { groundingChunks?: { web?: { uri?: string; title?: string } }[] };
+    }[];
+  };
+  const candidate = json.candidates?.[0];
+  const text = (candidate?.content?.parts ?? []).map((p) => p.text ?? "").join("").trim();
+  const citations = (candidate?.groundingMetadata?.groundingChunks ?? [])
+    .flatMap((c) => (c.web?.uri ? [{ url: c.web.uri, title: c.web.title }] : []));
+  return { text, citations, model };
+}
+
+/** Claude: Messages API with the server-side web search tool. */
+async function askClaude(source: SourceConfig, question: string): Promise<SourceResult> {
+  const model = modelFor(source);
+  const client = new Anthropic({ apiKey: process.env[source.envKey] });
+  const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: "user", content: userPrompt(question) }];
+
+  let text = "";
+  const citations: Citation[] = [];
+  // Server tools can pause a long turn; resend to let Claude continue (bounded).
+  for (let i = 0; i < 4; i++) {
+    const response = await client.beta.messages.create({
+      model,
+      max_tokens: 16000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default",
+      tools: [
+        {
+          type: "web_search_20260209",
+          name: "web_search",
+          max_uses: 5,
+          user_location: { type: "approximate", country: "IL", timezone: "Asia/Jerusalem" },
+        },
+      ],
+      messages,
+    });
+
+    if (response.stop_reason === "refusal") {
+      throw new Error(`Claude refused (${response.stop_details?.category ?? "unknown"})`);
+    }
+
+    for (const block of response.content) {
+      if (block.type === "text") {
+        text += block.text;
+        for (const c of block.citations ?? []) {
+          if (c.type === "web_search_result_location") citations.push({ url: c.url, title: c.title });
+        }
+      }
+    }
+
+    if (response.stop_reason !== "pause_turn") break;
+    messages.push({ role: "assistant", content: response.content });
+  }
+  return { text: text.trim(), citations, model };
+}
+
+/** Google AI Overview via SerpAPI. Empty text when Google shows no AI Overview for the query. */
+async function askGoogleAiOverview(source: SourceConfig, question: string): Promise<SourceResult> {
   const url = new URL("https://serpapi.com/search.json");
   url.searchParams.set("engine", "google");
   url.searchParams.set("q", question);
-  url.searchParams.set("hl", "he");
+  url.searchParams.set("hl", "iw");
   url.searchParams.set("gl", "il");
-  url.searchParams.set("api_key", key);
+  url.searchParams.set("google_domain", "google.co.il");
+  url.searchParams.set("api_key", process.env[source.envKey] ?? "");
 
   const res = await fetch(url.toString());
-  if (!res.ok) {
-    throw new Error(`SerpAPI ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  }
+  if (!res.ok) throw new Error(`SerpAPI ${res.status}: ${(await res.text()).slice(0, 300)}`);
 
-  const json = (await res.json()) as {
-    ai_overview?: {
-      text_blocks?: { snippet?: string; list?: { snippet?: string }[] }[];
-      references?: { title?: string; link?: string; source?: string }[];
-    };
+  type Overview = {
+    text_blocks?: { snippet?: string; list?: { snippet?: string; title?: string }[] }[];
+    references?: { title?: string; link?: string; source?: string }[];
+    page_token?: string;
   };
+  let overview = ((await res.json()) as { ai_overview?: Overview }).ai_overview;
 
-  const overview = json.ai_overview;
-  if (!overview) return "";
+  // Some results return only a token; the overview content needs a second request.
+  if (overview?.page_token && !overview.text_blocks) {
+    const next = new URL("https://serpapi.com/search.json");
+    next.searchParams.set("engine", "google_ai_overview");
+    next.searchParams.set("page_token", overview.page_token);
+    next.searchParams.set("api_key", process.env[source.envKey] ?? "");
+    const res2 = await fetch(next.toString());
+    if (res2.ok) overview = ((await res2.json()) as { ai_overview?: Overview }).ai_overview;
+  }
+  if (!overview) return { text: "", citations: [], model: "google-ai-overview" };
 
-  const blocks = (overview.text_blocks ?? [])
-    .flatMap((b) => [b.snippet ?? "", ...(b.list ?? []).map((l) => l.snippet ?? "")])
+  const text = (overview.text_blocks ?? [])
+    .flatMap((b) => [b.snippet ?? "", ...(b.list ?? []).map((l) => [l.title, l.snippet].filter(Boolean).join(" "))])
     .filter(Boolean)
-    .join("\n");
-
-  const refs = (overview.references ?? [])
-    .map((r) => `${r.source ?? r.title ?? ""} — ${r.link ?? ""}`)
-    .filter((r) => r.trim() !== "—")
-    .join("\n");
-
-  return [blocks, refs ? `\nמקורות מקושרים:\n${refs}` : ""].join("").trim();
+    .join("\n")
+    .trim();
+  const citations = (overview.references ?? [])
+    .flatMap((r) => (r.link ? [{ url: r.link, title: r.source ?? r.title }] : []));
+  return { text, citations, model: "google-ai-overview" };
 }
 
-async function callSource(
-  source: SourceConfig,
-  apiKey: string,
-  question: string,
-  brandNames: string[],
-) {
-  try {
-    if (source.kind === "gateway-openai") {
-      const gateway = createLovableResponsesProvider(apiKey);
-      const { output } = await generateText({
-        model: gateway.responses(source.model),
-        output: Output.object({ schema: RankingSchema }),
-        prompt: buildPrompt(question, brandNames),
-      });
-      return output;
-    }
-
-    if (source.kind === "gateway-chat") {
-      const gateway = createLovableAiGatewayProvider(apiKey);
-      const { output } = await generateText({
-        model: gateway(source.model),
-        output: Output.object({ schema: RankingSchema }),
-        prompt: buildPrompt(question, brandNames),
-      });
-      return output;
-    }
-
-    const answerText =
-      source.kind === "anthropic"
-        ? await callAnthropic(source, apiKey, question)
-        : await callGoogleAiOverview(question);
-
-    if (!answerText) return null;
-    return await structureText(apiKey, question, brandNames, answerText);
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      return null;
-    }
-    throw error;
+function askSource(source: SourceConfig, question: string) {
+  switch (source.id) {
+    case "chatgpt":
+      return askChatGpt(source, question);
+    case "gemini":
+      return askGemini(source, question);
+    case "claude":
+      return askClaude(source, question);
+    case "google":
+      return askGoogleAiOverview(source, question);
+    default:
+      throw new Error(`unsupported source ${source.id}`);
   }
 }
 
 export async function collectQuestion(
   supabase: SupabaseClient<Database>,
-  apiKey: string,
   questionId: string,
   questionText: string,
-  brands: { id: string; name: string }[],
+  brands: MatchBrand[],
   sourceIds: string[],
-  runId: string,
 ) {
-  const brandNames = brands.map((b) => b.name);
-  const brandMap = new Map(brands.map((b) => [b.name, b.id]));
-  const logs: string[] = [];
+  const sources = sourceIds.flatMap((id) => {
+    const s = SUPPORTED_SOURCES.find((x) => x.id === id);
+    return s && isSourceReady(s) ? [s] : [];
+  });
 
-  for (const sourceId of sourceIds) {
-    const source = SUPPORTED_SOURCES.find((s) => s.id === sourceId);
-    if (!source) {
-      logs.push(`skipped unsupported source ${sourceId} for question ${questionId}`);
-      continue;
-    }
-    if (!isSourceReady(source)) {
-      logs.push(`skipped ${sourceId}: missing ${source.envKey}`);
-      continue;
-    }
+  // Sources are independent, so ask them in parallel
+  const logs = await Promise.all(
+    sources.map(async (source) => {
+      try {
+        const result = await askSource(source, questionText);
+        if (!result.text) return `no answer from ${source.id} for question ${questionId}`;
 
-
-    try {
-      const result = await callSource(source, apiKey, questionText, brandNames);
-      if (!result) {
-        logs.push(`no structured output from ${sourceId} for question ${questionId}`);
-        continue;
+        const sourceAnswerId = await upsertSourceAnswer(supabase, {
+          question_id: questionId,
+          source: source.id,
+          summary: result.text,
+          raw_response: JSON.stringify(result),
+        });
+        await upsertAnswerRankings(supabase, sourceAnswerId, matchBrands(result.text, result.citations, brands));
+        return `collected ${source.id} for question ${questionId}`;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return `error from ${source.id} for question ${questionId}: ${message}`;
       }
+    }),
+  );
 
-      const sourceAnswerId = await upsertSourceAnswer(supabase, {
-        question_id: questionId,
-        source: sourceId,
-        summary: result.summary,
-        raw_response: JSON.stringify(result),
-      });
-
-      const rankings = result.brands
-        .filter((b) => brandMap.has(b.name))
-        .map((b) => ({
-          brand_id: brandMap.get(b.name)!,
-          position: b.position,
-          mentioned: b.mentioned,
-          has_link: b.has_link,
-        }));
-
-      await upsertAnswerRankings(supabase, sourceAnswerId, rankings);
-      logs.push(`collected ${sourceId} for question ${questionId}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      logs.push(`error from ${sourceId} for question ${questionId}: ${message}`);
-    }
-  }
-
-  return logs;
+  const skipped = sourceIds.filter((id) => !sources.some((s) => s.id === id));
+  return [...logs, ...skipped.map((id) => `skipped ${id}: missing API key`)];
 }
 
 export async function runCollection(
   supabase: SupabaseClient<Database>,
-  apiKey: string,
   sourceIds: string[],
   runId: string,
 ) {
   const [brands, questions] = await Promise.all([getBrands(supabase), getQuestions(supabase)]);
-  const brandList = brands.map((b) => ({ id: b.id, name: b.name }));
 
   await updateCollectionRun(supabase, runId, {
     total_questions: questions.length,
@@ -321,15 +280,7 @@ export async function runCollection(
   const allLogs: string[] = [];
 
   for (const question of questions) {
-    const logs = await collectQuestion(
-      supabase,
-      apiKey,
-      question.id,
-      question.text,
-      brandList,
-      sourceIds,
-      runId,
-    );
+    const logs = await collectQuestion(supabase, question.id, question.text, brands, sourceIds);
     allLogs.push(...logs);
     processed++;
     await updateCollectionRun(supabase, runId, {
@@ -344,66 +295,52 @@ export async function runCollection(
     logs: allLogs as Json,
   });
 
-  await refreshSnapshots(supabase, brands);
+  await refreshSnapshots(supabase);
 }
 
-export async function refreshSnapshots(
-  supabase: SupabaseClient<Database>,
-  brands: { id: string; name: string; is_mine: boolean }[],
-) {
+type Bucket = { answers: number; mineMentions: number; minePositions: number[]; mineLinks: number };
+
+/** Writes today's metrics for my brand, per domain and for "all". */
+export async function refreshSnapshots(supabase: SupabaseClient<Database>) {
   const { data: answers, error } = await supabase
     .from("source_answers")
-    .select(
-      "id, question_id, questions(topic_id, topics(domain_id)), answer_rankings(brand_id, position, mentioned, has_link, brands(is_mine))",
-    );
+    .select("id, questions(topics(domain_id)), answer_rankings(position, mentioned, has_link, brands(is_mine))");
   if (error || !answers) {
     console.warn("refreshSnapshots failed", error);
     return;
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const byDomain = new Map<string, { mentions: number[]; positions: number[]; links: number[]; minePositions: number[]; mineMentions: number[]; mineLinks: number[] }>();
+  const buckets = new Map<string, Bucket>();
+  const bucket = (id: string) => {
+    if (!buckets.has(id)) buckets.set(id, { answers: 0, mineMentions: 0, minePositions: [], mineLinks: 0 });
+    return buckets.get(id)!;
+  };
 
   for (const answer of answers as unknown as {
-    id: string;
-    questions: { topic_id: string; topics: { domain_id: string } | null } | null;
-    answer_rankings: {
-      brand_id: string;
-      position: number | null;
-      mentioned: boolean;
-      has_link: boolean;
-      brands: { is_mine: boolean } | null;
-    }[];
+    questions: { topics: { domain_id: string } | null } | null;
+    answer_rankings: { position: number | null; mentioned: boolean; has_link: boolean; brands: { is_mine: boolean } | null }[];
   }[]) {
-    const domainId = answer.questions?.topics?.domain_id ?? "all";
-    if (!byDomain.has(domainId)) {
-      byDomain.set(domainId, { mentions: [], positions: [], links: [], minePositions: [], mineMentions: [], mineLinks: [] });
+    const domainId = answer.questions?.topics?.domain_id;
+    const mine = answer.answer_rankings.find((r) => r.brands?.is_mine);
+    for (const b of domainId ? [bucket("all"), bucket(domainId)] : [bucket("all")]) {
+      b.answers++;
+      if (mine?.mentioned) {
+        b.mineMentions++;
+        if (mine.position !== null) b.minePositions.push(mine.position);
+      }
+      if (mine?.has_link) b.mineLinks++;
     }
-    const bucket = byDomain.get(domainId)!;
-    const allRankings = answer.answer_rankings;
-    const mentioned = allRankings.filter((r) => r.mentioned);
-    bucket.mentions.push(mentioned.length);
-    bucket.positions.push(...mentioned.map((r) => r.position).filter((p): p is number => p !== null));
-    bucket.links.push(...mentioned.filter((r) => r.has_link).map(() => 1));
-
-    const mine = allRankings.filter((r) => r.brands?.is_mine);
-    bucket.mineMentions.push(mine.filter((r) => r.mentioned).length > 0 ? 1 : 0);
-    bucket.minePositions.push(...mine.map((r) => r.position).filter((p): p is number => p !== null));
-    bucket.mineLinks.push(...mine.filter((r) => r.has_link).map(() => 1));
   }
 
-  for (const [domainId, bucket] of byDomain) {
-    const avgPos = bucket.positions.length ? bucket.positions.reduce((a, b) => a + b, 0) / bucket.positions.length : 0;
-    const mineAvgPos = bucket.minePositions.length
-      ? bucket.minePositions.reduce((a, b) => a + b, 0) / bucket.minePositions.length
+  for (const [domainId, b] of buckets) {
+    const avgPos = b.minePositions.length
+      ? b.minePositions.reduce((a, c) => a + c, 0) / b.minePositions.length
       : 0;
-    const mentionRate = answers.length ? (bucket.mineMentions.filter((v) => v === 1).length / answers.length) * 100 : 0;
-    const linkRate = bucket.mineMentions.length
-      ? (bucket.mineLinks.length / bucket.mineMentions.length) * 100
-      : 0;
+    const mentionRate = b.answers ? (b.mineMentions / b.answers) * 100 : 0;
+    const linkRate = b.answers ? (b.mineLinks / b.answers) * 100 : 0;
 
-    await computeSnapshot(supabase, today, domainId, "avg_position", Number(avgPos.toFixed(2)));
-    await computeSnapshot(supabase, today, domainId, "mine_avg_position", Number(mineAvgPos.toFixed(2)));
+    await computeSnapshot(supabase, today, domainId, "mine_avg_position", Number(avgPos.toFixed(2)));
     await computeSnapshot(supabase, today, domainId, "mine_mention_rate", Number(mentionRate.toFixed(2)));
     await computeSnapshot(supabase, today, domainId, "mine_link_rate", Number(linkRate.toFixed(2)));
   }

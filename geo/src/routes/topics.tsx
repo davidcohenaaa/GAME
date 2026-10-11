@@ -14,7 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DOMAINS } from "@/data/mock";
+import { DOMAINS } from "@/lib/catalog";
 import { addQuestion, addTopic, getTopics } from "@/lib/geo.functions";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -46,7 +46,7 @@ function TopicsPage() {
   const [domain, setDomain] = useState("all");
   const [open, setOpen] = useState<string | null>(initial.topics[0]?.id ?? null);
   const [newTopic, setNewTopic] = useState("");
-  const [newTopicDomain, setNewTopicDomain] = useState("travel");
+  const [newTopicDomain, setNewTopicDomain] = useState("car");
   const [topicDialog, setTopicDialog] = useState(false);
   const [questionFor, setQuestionFor] = useState<string | null>(null);
   const [newQuestion, setNewQuestion] = useState("");
@@ -138,7 +138,7 @@ function TopicsPage() {
           <DialogContent dir="rtl">
             <DialogHeader className="text-right">
               <DialogTitle>נושא חדש</DialogTitle>
-              <DialogDescription>לדוגמה: ביטוח נסיעות, מחירים, שירות, בריאות</DialogDescription>
+              <DialogDescription>לדוגמה: ביטוח רכב לנהגים צעירים, קרן השתלמות</DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
               <Input
@@ -255,7 +255,7 @@ function TopicsPage() {
             <DialogDescription>נסח את השאלה כפי שגולש היה שואל מנוע AI</DialogDescription>
           </DialogHeader>
           <Input
-            placeholder="לדוגמה: מה ביטוח הנסיעות הטוב ביותר ליפן?"
+            placeholder="לדוגמה: איזה ביטוח רכב הכי זול לנהג צעיר?"
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
           />

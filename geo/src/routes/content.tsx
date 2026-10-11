@@ -36,6 +36,9 @@ function ContentPage() {
 
   return (
     <AppShell title="צור תוכן מהאתר שלי" subtitle="תוכן שמבוסס אך ורק על מה שכבר קיים באתר שלך">
+      <div className="mb-6 rounded-xl border border-dashed border-border bg-secondary p-4 text-sm text-muted-foreground">
+        המסך הזה עדיין לא מחובר: התוכן שמוצג כאן הוא דוגמה קבועה ולא נוצר מהאתר שלך.
+      </div>
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="surface-card space-y-6 p-6 lg:col-span-2">
           <div>
