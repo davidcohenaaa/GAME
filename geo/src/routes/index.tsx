@@ -119,7 +119,8 @@ function Dashboard() {
                   <XAxis dataKey="date" tickLine={false} axisLine={false} fontSize={12}
                     stroke="var(--color-muted-foreground)" />
                   <YAxis reversed domain={[1, "dataMax"]} allowDecimals={false} tickLine={false} axisLine={false} fontSize={12}
-                    stroke="var(--color-muted-foreground)" width={28} />
+                    stroke="var(--color-muted-foreground)" width={40}
+                    tickFormatter={(v: number) => v.toFixed(1)} />
                   <Tooltip
                     contentStyle={{
                       borderRadius: 12,

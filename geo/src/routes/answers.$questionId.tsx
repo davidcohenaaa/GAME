@@ -49,7 +49,7 @@ function AnswerPage() {
       { brand: string; isMine: boolean; mentions: number; positions: number[]; links: number; sources: SourceId[] }
     >();
 
-    for (const answer of sourceAnswers) {
+    for (const answer of visibleAnswers) {
       for (const r of answer.answer_rankings) {
         if (!r.brands) continue;
         const existing = scores.get(r.brands.id);
@@ -72,7 +72,9 @@ function AnswerPage() {
       }
     }
 
+    // Rankings are stored for every tracked brand; only brands named in the answer are ranked
     return Array.from(scores.values())
+      .filter((r) => r.mentions > 0)
       .map((r) => ({
         ...r,
         avgPosition: r.positions.length > 0 ? r.positions.reduce((a, b) => a + b, 0) / r.positions.length : null,
@@ -82,7 +84,7 @@ function AnswerPage() {
         if (b.avgPosition === null) return -1;
         return a.avgPosition - b.avgPosition;
       });
-  }, [sourceAnswers]);
+  }, [visibleAnswers]);
 
   const myRow = combinedRanking.find((r) => r.isMine);
   const myPosition = myRow ? combinedRanking.indexOf(myRow) + 1 : null;

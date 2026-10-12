@@ -64,10 +64,6 @@ export function AppShell({
               );
             })}
           </nav>
-
-          <div className="mt-6 hidden rounded-xl bg-secondary p-3 text-xs text-muted-foreground md:block">
-            נתוני דוגמה בלבד — התחום: ביטוח נסיעות
-          </div>
         </aside>
 
         <main className="min-w-0 flex-1">
