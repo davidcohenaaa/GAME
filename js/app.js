@@ -23,7 +23,7 @@
   function orderedModules() { return ORDER.map(moduleById); }
 
   var COST_LABEL = { free: "חינמי", "free-limited": "חינמי עם הגבלות", paid: "בתשלום", mixed: "חינמי ובתשלום" };
-  function toolTag(m) { return m.kind ? ' <span class="tag">' + (m.kind === "business" ? "עסק" : "כלי") + "</span>" : ""; }
+  function toolTag(m) { return m.kind === "tools" || m.kind === "business" ? ' <span class="tag">' + (m.kind === "business" ? "עסק" : "כלי") + "</span>" : ""; }
 
   // באנר "מומלץ לסיים קודם" כשהרמה הקודמת עוד לא הושלמה
   function prevLevelNote(lv) {
