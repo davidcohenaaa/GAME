@@ -338,5 +338,11 @@
   });
   nav.addEventListener("click", function () { document.body.classList.remove("nav-open"); });
   window.addEventListener("hashchange", route);
+  // אחרי סנכרון: מרעננים רק מסכים שאינם חידון או מבחן באמצע
+  window.addEventListener("progress-synced", function () {
+    var h = location.hash || "#/";
+    if (h === "#/" || /^#\/(level|module|tools)/.test(h)) route();
+    else renderNav();
+  });
   route();
 })();

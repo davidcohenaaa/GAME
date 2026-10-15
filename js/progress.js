@@ -31,12 +31,21 @@
 
   var state = load();
 
+  var saveHooks = [];
+
   function save() {
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
     } catch (e) {
       memory = state; // ממשיכים לעבוד בזיכרון בלבד
     }
+    saveHooks.forEach(function (fn) { try { fn(); } catch (e) {} });
+  }
+
+  function maxMap(a, b) {
+    var out = Object.assign({}, a);
+    Object.keys(b || {}).forEach(function (k) { out[k] = Math.max(out[k] || 0, b[k] || 0); });
+    return out;
   }
 
   function fmt(d) {
@@ -197,6 +206,34 @@
         }
       }
       return null;
+    },
+
+    // סנכרון: הרשמה לשמירות, ומיזוג נתונים מרוחקים (המקסימום מכל צד)
+    onSave: function (fn) { saveHooks.push(fn); },
+    merge: function (remote) {
+      if (!remote || typeof remote !== "object") return false;
+      var before = JSON.stringify(state);
+      state.lessons = maxMap(state.lessons, remote.lessons);
+      state.exams = maxMap(state.exams, remote.exams);
+      state.finals = maxMap(state.finals, remote.finals);
+      var ms = Object.assign({}, remote.milestones || {}, state.milestones);
+      state.milestones = ms;
+      var days = {};
+      (state.days || []).concat(remote.days || []).forEach(function (d) { days[d] = true; });
+      state.days = Object.keys(days).sort();
+      var seen = {};
+      state.history = (state.history || []).concat(remote.history || []).filter(function (h) {
+        var k = h.t + ":" + h.kind + ":" + h.id;
+        if (seen[k]) return false;
+        seen[k] = true;
+        return true;
+      }).sort(function (a, b) { return a.t - b.t; });
+      if (!state.name && remote.name) state.name = remote.name;
+      var changed = JSON.stringify(state) !== before;
+      if (changed) {
+        try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      }
+      return changed;
     },
 
     exportJSON: function () { return JSON.stringify(state); },
