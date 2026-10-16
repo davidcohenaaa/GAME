@@ -286,13 +286,31 @@
 
   // ---------- אודות והגדרות ----------
   function aboutPage() {
-    var html = "<h1>על הקורס והגדרות</h1>" +
+    var cloudHtml = "";
+    if (window.FIREBASE_CONFIG) {
+      var CL = window.Cloud || { status: "loading" };
+      cloudHtml = '<section class="card"><h2>סנכרון בין מכשירים</h2>';
+      if (CL.status === "signedin") {
+        cloudHtml += '<p>מחוברים כ-<b dir="ltr">' + esc(CL.email) + '</b>. ההתקדמות נשמרת בענן ועוברת בין המכשירים שלכם.</p><button class="btn" id="cloud-out">התנתקות</button>';
+      } else if (CL.status === "loading") {
+        cloudHtml += '<p class="muted">טוען…</p>';
+      } else {
+        cloudHtml += '<p>התחברו עם חשבון Google כדי לשמור את ההתקדמות בענן ולראות אותה בכל מכשיר.</p><button class="btn primary" id="cloud-in">התחברות עם Google</button>' +
+          (CL.error ? '<p class="muted">לא הצלחנו להתחבר (' + esc(CL.error) + "). נסו שוב.</p>" : "");
+      }
+      cloudHtml += "</section>";
+    }
+    var html = "<h1>על הקורס והגדרות</h1>" + cloudHtml +
       '<section class="card"><h2>מה הקורס נותן</h2><p>4 רמות, ' + C.length + " מודולים ו-" + P.allLessons().length + " שיעורים עם חידונים, מבחן לכל מודול, מבחן לכל רמה ואבני דרך מעשיות. נכתב כבסיס לימודי בעברית ל-SEO ול-GEO, עד רמת מומחה.</p>" +
       "<p><b>גילוי נאות:</b> התחום משתנה במהירות, ובפרט GEO. בדקו מידע מול מקורות רשמיים (Google Search Central ותיעוד של מערכות AI). אין כאן הבטחה להכנסה, וקורס לבדו אינו הופך למומחה: מומחיות נבנית בפרויקטים אמיתיים.</p></section>" +
       '<section class="card"><h2>הנתונים שלכם</h2><p class="muted">ההתקדמות נשמרת בדפדפן הזה בלבד. כדי לעבור למכשיר אחר, ייצאו וייבאו קובץ.</p>' +
       '<div class="row"><button class="btn" id="exp">ייצוא התקדמות</button> <label class="btn">ייבוא<input id="imp" type="file" accept="application/json" hidden></label> ' +
       '<button class="btn danger" id="rst">איפוס הכל</button></div><p id="msg" class="muted" role="status"></p></section>';
     view(html);
+    var cin = document.getElementById("cloud-in");
+    if (cin) cin.addEventListener("click", function () { window.Cloud && window.Cloud.signIn && window.Cloud.signIn(); });
+    var cout = document.getElementById("cloud-out");
+    if (cout) cout.addEventListener("click", function () { window.Cloud && window.Cloud.signOut && window.Cloud.signOut(); });
     var msg = document.getElementById("msg");
     document.getElementById("exp").addEventListener("click", function () {
       var blob = new Blob([P.exportJSON()], { type: "application/json" });
@@ -339,6 +357,9 @@
   nav.addEventListener("click", function () { document.body.classList.remove("nav-open"); });
   window.addEventListener("hashchange", route);
   // אחרי סנכרון: מרעננים רק מסכים שאינם חידון או מבחן באמצע
+  window.addEventListener("cloud-status", function () {
+    if ((location.hash || "") === "#/about") route();
+  });
   window.addEventListener("progress-synced", function () {
     var h = location.hash || "#/";
     if (h === "#/" || /^#\/(level|module|tools)/.test(h)) route();
