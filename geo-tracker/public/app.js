@@ -3,7 +3,25 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const pc = (x) => `${Math.round((x || 0) * 100)}%`;
 
 const token = new URLSearchParams(location.search).get('token') || '';
+// An exported report embeds its data in window.STATIC_DATA and never calls the server.
+const STATIC = window.STATIC_DATA || null;
+
+function staticApi(path) {
+  const url = new URL(path, 'http://x');
+  const p = url.pathname;
+  if (p === '/api/status') return STATIC.status;
+  if (p === '/api/runs') return [STATIC.run];
+  if (p.endsWith('/report')) return STATIC.report;
+  if (p.endsWith('/answers')) {
+    const prompt = url.searchParams.get('prompt');
+    return STATIC.answers.filter((a) => !prompt || a.promptId === prompt);
+  }
+  if (p.startsWith('/api/runs/')) return STATIC.run;
+  throw new Error('לא זמין בדוח משותף');
+}
+
 async function api(path, opts = {}) {
+  if (STATIC) return staticApi(path);
   const res = await fetch(path, {
     ...opts,
     headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
@@ -73,7 +91,7 @@ function renderRecs(r) {
           ${a.quotes?.length ? `<div class="quotes">${a.quotes.map((q) => `<blockquote>“${esc(q)}”</blockquote>`).join('')}</div>` : ''}
         </li>`).join('')}</ol>
       <div class="row-start">
-        <button data-audit="${esc(x.promptId)}">בדיקת עמודים מול המתחרים</button>
+        <button data-audit="${esc(x.promptId)}" class="live-only">בדיקת עמודים מול המתחרים</button>
         <button data-answers="${esc(x.promptId)}">התשובות המלאות</button>
       </div>
       <div class="audit" id="audit-${esc(x.promptId)}"></div>
@@ -311,7 +329,14 @@ $('#savePages').addEventListener('click', async () => {
   try {
     state.status = await api('/api/status');
     $('#mockBanner').hidden = !state.status.mock;
-    await Promise.all([loadRuns(), loadSettings()]);
+    if (STATIC) {
+      document.body.classList.add('static');
+      $('#staticBanner').hidden = false;
+      $('#staticBanner').textContent = `דוח משותף · הרצה מ-${new Date(STATIC.run.startedAt).toLocaleString('he-IL')} · מנועים: ${STATIC.run.engines.join(', ')} · ${STATIC.run.done} תשובות${STATIC.run.errors ? `, ${STATIC.run.errors} שגיאות` : ''}`;
+      await loadRuns();
+    } else {
+      await Promise.all([loadRuns(), loadSettings()]);
+    }
   } catch (err) {
     document.body.insertAdjacentHTML('afterbegin', `<div class="banner bad">${esc(err.message)}</div>`);
   }

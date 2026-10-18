@@ -6,12 +6,18 @@
   --radius: 12px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0f1216; --card: #171b21; --text: #e7eaee; --muted: #9aa4b2; --border: #2a3039;
     --accent: #5b8cff; --target: #5b8cff; --main: #ff8a3d; --other: #5d6673;
     --good: #4cc38a; --good-bg: #133326; --warn: #e3b341; --warn-bg: #3a2f10;
     --bad: #ff6b6b; --bad-bg: #3a1717; --neutral-bg: #222832;
   }
+}
+:root[data-theme="dark"] {
+    --bg: #0f1216; --card: #171b21; --text: #e7eaee; --muted: #9aa4b2; --border: #2a3039;
+    --accent: #5b8cff; --target: #5b8cff; --main: #ff8a3d; --other: #5d6673;
+    --good: #4cc38a; --good-bg: #133326; --warn: #e3b341; --warn-bg: #3a2f10;
+    --bad: #ff6b6b; --bad-bg: #3a1717; --neutral-bg: #222832;
 }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: "Assistant", "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
@@ -32,6 +38,8 @@ select, input, textarea { background: var(--card); border: 1px solid var(--borde
 textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 0.9em; }
 
 .banner { margin: 12px 20px 0; padding: 10px 14px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); }
+.banner.info { background: var(--neutral-bg); color: var(--text); }
+.static .live-only { display: none !important; }
 .banner.bad { background: var(--bad-bg); color: var(--bad); }
 .banner.progress { background: var(--neutral-bg); color: var(--text); }
 .bar { height: 6px; background: var(--border); border-radius: 3px; margin-top: 6px; overflow: hidden; }

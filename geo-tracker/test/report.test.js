@@ -55,3 +55,12 @@ test('page comparison lists what the rival page has and ours lacks', () => {
   assert.ok(keys.includes('tables'));
   assert.ok(keys.includes('faqSchema'));
 });
+
+test('export embeds the run as a self-contained page', async () => {
+  const { exportHtml } = await import('../src/export.js');
+  const html = exportHtml({ ...run, answers: [...run.answers, { ...run.answers[0], text: '</script><b>x</b>' }] });
+  assert.ok(html.includes('window.STATIC_DATA'));
+  assert.ok(!html.includes('href="styles.css"') && !html.includes('src="app.js"'));
+  assert.equal(html.match(/<\/script>/g).length, 2, 'embedded text must not close the script tag');
+  assert.ok(html.includes('<meta name="description"'));
+});

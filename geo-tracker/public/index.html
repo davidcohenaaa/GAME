@@ -14,10 +14,11 @@
     </div>
     <div class="top-actions">
       <select id="runSelect" aria-label="בחירת הרצה"></select>
-      <button id="newRunBtn" class="primary">הרצה חדשה</button>
+      <button id="newRunBtn" class="primary live-only">הרצה חדשה</button>
     </div>
   </header>
 
+  <div id="staticBanner" class="banner info" hidden></div>
   <div id="mockBanner" class="banner" hidden>מצב דמו: התוצאות מדומות. הוסיפו מפתחות API לקובץ ‎.env‎ כדי לבדוק את המנועים האמיתיים.</div>
   <div id="progress" class="banner progress" hidden><span id="progressText"></span><div class="bar"><div id="progressBar"></div></div></div>
 
@@ -27,7 +28,7 @@
     <button data-tab="matrix">מטריצת פערים</button>
     <button data-tab="sources">מקורות</button>
     <button data-tab="history">מגמה</button>
-    <button data-tab="settings">הגדרות</button>
+    <button data-tab="settings" class="live-only">הגדרות</button>
   </nav>
 
   <main>

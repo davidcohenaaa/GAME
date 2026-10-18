@@ -4,11 +4,14 @@
   "description": "מעקב נוכחות מותג בתשובות של מנועי בינה (GEO) — כלל מול המתחרים",
   "type": "module",
   "private": true,
-  "engines": { "node": ">=20.12" },
+  "engines": {
+    "node": ">=20.12"
+  },
   "scripts": {
     "start": "node src/server.js",
     "mock": "MOCK=1 node src/server.js",
     "run-once": "node src/cli.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "export": "node src/export.js"
   }
 }
