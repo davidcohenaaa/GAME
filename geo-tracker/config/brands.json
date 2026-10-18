@@ -1,0 +1,33 @@
+{
+  "target": "clal",
+  "mainCompetitor": "phoenix",
+  "brands": [
+    { "id": "clal", "name": "כלל ביטוח", "domains": ["clalbit.co.il", "clal.co.il"],
+      "aliases": ["כלל ביטוח", "כלל חברה לביטוח", "כלל ביטוח ופיננסים", "Clal", "Clalbit", "כללביט"],
+      "ambiguous": ["כלל"] },
+    { "id": "phoenix", "name": "הפניקס", "domains": ["fnx.co.il", "phoenix.co.il"],
+      "aliases": ["הפניקס", "פניקס", "Phoenix", "FNX"] },
+    { "id": "harel", "name": "הראל", "domains": ["harel-group.co.il", "harel.co.il"],
+      "aliases": ["הראל", "Harel"] },
+    { "id": "migdal", "name": "מגדל", "domains": ["migdal.co.il"],
+      "aliases": ["מגדל ביטוח", "מגדל חברה לביטוח", "Migdal"], "ambiguous": ["מגדל"] },
+    { "id": "menora", "name": "מנורה מבטחים", "domains": ["menoramivt.co.il", "menora.co.il"],
+      "aliases": ["מנורה מבטחים", "מנורה", "Menora"] },
+    { "id": "ayalon", "name": "איילון", "domains": ["ayalon-ins.co.il"],
+      "aliases": ["איילון ביטוח", "איילון חברה לביטוח", "Ayalon"], "ambiguous": ["איילון"] },
+    { "id": "hachshara", "name": "הכשרה ביטוח", "domains": ["hachshara.co.il"],
+      "aliases": ["הכשרה ביטוח", "הכשרה חברה לביטוח", "הכשרת הישוב", "Hachshara"], "ambiguous": ["הכשרה"] },
+    { "id": "direct", "name": "ביטוח ישיר", "domains": ["555.co.il", "idi.co.il"],
+      "aliases": ["ביטוח ישיר", "IDI", "Direct Insurance"] },
+    { "id": "aig", "name": "AIG", "domains": ["aig.co.il"],
+      "aliases": ["AIG"] },
+    { "id": "9milion", "name": "9 מיליון", "domains": ["9milion.co.il"],
+      "aliases": ["9 מיליון", "9מיליון", "תשעה מיליון", "9 Milion"] },
+    { "id": "shirbit", "name": "שירביט", "domains": ["shirbit.co.il"],
+      "aliases": ["שירביט", "Shirbit"] },
+    { "id": "libra", "name": "ליברה", "domains": ["libra.co.il"],
+      "aliases": ["ליברה", "Libra"] },
+    { "id": "wesure", "name": "WeSure", "domains": ["wesure.co.il"],
+      "aliases": ["WeSure", "ווישור", "וי שור"] }
+  ]
+}

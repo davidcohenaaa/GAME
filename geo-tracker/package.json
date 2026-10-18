@@ -1,0 +1,14 @@
+{
+  "name": "geo-tracker",
+  "version": "1.0.0",
+  "description": "מעקב נוכחות מותג בתשובות של מנועי בינה (GEO) — כלל מול המתחרים",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=20.12" },
+  "scripts": {
+    "start": "node src/server.js",
+    "mock": "MOCK=1 node src/server.js",
+    "run-once": "node src/cli.js",
+    "test": "node --test test/*.test.js"
+  }
+}

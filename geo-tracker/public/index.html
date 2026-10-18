@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GEO Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <strong>GEO Tracker</strong>
+      <span class="muted">נוכחות בתשובות מנועי בינה — כלל מול המתחרים</span>
+    </div>
+    <div class="top-actions">
+      <select id="runSelect" aria-label="בחירת הרצה"></select>
+      <button id="newRunBtn" class="primary">הרצה חדשה</button>
+    </div>
+  </header>
+
+  <div id="mockBanner" class="banner" hidden>מצב דמו: התוצאות מדומות. הוסיפו מפתחות API לקובץ ‎.env‎ כדי לבדוק את המנועים האמיתיים.</div>
+  <div id="progress" class="banner progress" hidden><span id="progressText"></span><div class="bar"><div id="progressBar"></div></div></div>
+
+  <nav class="tabs" role="tablist">
+    <button data-tab="overview" class="active">סקירה</button>
+    <button data-tab="actions">מה לעשות</button>
+    <button data-tab="matrix">מטריצת פערים</button>
+    <button data-tab="sources">מקורות</button>
+    <button data-tab="history">מגמה</button>
+    <button data-tab="settings">הגדרות</button>
+  </nav>
+
+  <main>
+    <section id="tab-overview" class="tab active">
+      <div id="empty" class="card empty" hidden>
+        <h2>עדיין אין הרצות</h2>
+        <p>לחצו על "הרצה חדשה" כדי לשאול את כל המנועים את רשימת הפרומפטים ולמדוד איפה כלל מופיעה.</p>
+      </div>
+      <div id="kpis" class="kpis"></div>
+      <div class="grid2">
+        <div class="card"><h2>Share of Voice — אחוז התשובות שמזכירות כל חברה</h2><div id="sov"></div></div>
+        <div class="card"><h2>מה אומרים על <span class="mainName"></span> ולא אומרים על כלל</h2><p class="muted small">הנימוקים שהמנועים נותנים כשהם ממליצים על כל חברה</p><div id="attrGap"></div></div>
+      </div>
+      <div class="card"><h2>כיסוי לפי מנוע</h2><div id="perEngine"></div></div>
+    </section>
+
+    <section id="tab-actions" class="tab">
+      <div class="card">
+        <div class="row-between">
+          <h2>רשימת פעולות לפי עדיפות</h2>
+          <button id="aiPlanBtn" hidden>תוכנית פעולה מלאה עם Claude</button>
+        </div>
+        <div id="aiPlan" class="ai-plan" hidden></div>
+        <div id="recs"></div>
+      </div>
+    </section>
+
+    <section id="tab-matrix" class="tab">
+      <div class="card">
+        <h2>פרומפט × מנוע</h2>
+        <div class="legend">
+          <span class="chip lead">ראשונה</span><span class="chip present">מוזכרת</span><span class="chip weak">לפעמים</span><span class="chip missing">חסרה והמתחרים כן</span><span class="chip absent">אף חברה</span>
+        </div>
+        <div class="table-wrap"><table id="matrix"></table></div>
+      </div>
+    </section>
+
+    <section id="tab-sources" class="tab">
+      <div class="card">
+        <h2>המקורות שהמנועים מצטטים</h2>
+        <p class="muted small">"כשהמתחרה מוזכר וכלל לא" = האתרים שמזינים את המתחרים. שם צריך להיות.</p>
+        <div class="table-wrap"><table id="sources"></table></div>
+      </div>
+    </section>
+
+    <section id="tab-history" class="tab">
+      <div class="card"><h2>כיסוי לאורך זמן</h2><div id="trend"></div><div class="table-wrap"><table id="history"></table></div></div>
+    </section>
+
+    <section id="tab-settings" class="tab">
+      <div class="card">
+        <h2>מנועים פעילים</h2>
+        <div id="engineList"></div>
+        <p class="muted small">מנוע פעיל כשיש לו מפתח בקובץ <code>.env</code> בשרת. המפתחות לא נשלחים לדפדפן.</p>
+      </div>
+      <div class="card">
+        <h2>פרומפטים</h2>
+        <p class="muted small">שורה לכל פרומפט: <code>טקסט | נושא | עדיפות (high/medium/low)</code></p>
+        <textarea id="promptsText" rows="16" dir="rtl"></textarea>
+        <button id="savePrompts">שמירה</button> <span id="promptsSaved" class="muted small"></span>
+      </div>
+      <div class="card">
+        <h2>העמודים של כלל לכל נושא</h2>
+        <p class="muted small">בדיקת העמודים משווה את העמוד הזה לעמודי המתחרים שהמנועים ציטטו.</p>
+        <div id="pagesForm"></div>
+        <button id="savePages">שמירה</button> <span id="pagesSaved" class="muted small"></span>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="runDialog">
+    <form method="dialog" id="runForm">
+      <h2>הרצה חדשה</h2>
+      <fieldset><legend>מנועים</legend><div id="runEngines"></div></fieldset>
+      <label>חזרות לכל פרומפט <input type="number" id="runReps" min="1" max="10" value="3"></label>
+      <label>תווית (לא חובה) <input type="text" id="runLabel" placeholder="למשל: לפני השקת עמוד נהג צעיר"></label>
+      <p id="runPlan" class="muted"></p>
+      <div class="row-end">
+        <button value="cancel">ביטול</button>
+        <button id="runStart" value="ok" class="primary">התחלה</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="detailDialog" class="wide">
+    <div class="row-between"><h2 id="detailTitle"></h2><button id="detailClose" aria-label="סגירה">✕</button></div>
+    <div id="detailBody"></div>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
