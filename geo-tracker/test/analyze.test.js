@@ -55,3 +55,13 @@ test('citation domains map to brands', () => {
   assert.equal(brandForDomain('www2.clalbit.co.il'.replace(/^www\./, ''), cfg), 'clal');
   assert.equal(brandForDomain('ynet.co.il', cfg), null);
 });
+
+test('demo mode uses the fictional brands file', async () => {
+  const { brandsConfigName } = await import('../src/config.js');
+  const prev = process.env.MOCK;
+  process.env.MOCK = '1';
+  assert.equal(brandsConfigName(), 'brands.demo');
+  process.env.MOCK = '0';
+  assert.equal(brandsConfigName(), 'brands');
+  process.env.MOCK = prev;
+});

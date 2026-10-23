@@ -10,7 +10,7 @@
   <header class="top">
     <div class="brand">
       <strong>GEO Tracker</strong>
-      <span class="muted">נוכחות בתשובות מנועי בינה — כלל מול המתחרים</span>
+      <span class="muted">נוכחות בתשובות מנועי בינה — <span class="targetName">המותג שלך</span> מול המתחרים</span>
     </div>
     <div class="top-actions">
       <select id="runSelect" aria-label="בחירת הרצה"></select>
@@ -19,7 +19,7 @@
   </header>
 
   <div id="staticBanner" class="banner info" hidden></div>
-  <div id="mockBanner" class="banner" hidden>מצב דמו: התוצאות מדומות. הוסיפו מפתחות API לקובץ ‎.env‎ כדי לבדוק את המנועים האמיתיים.</div>
+  <div id="mockBanner" class="banner" hidden>דמו — חברות הביטוח, התשובות והמספרים בדויים, להמחשה בלבד. בהרצה אמיתית הכלי שואל את מנועי הבינה ובודק את החברות האמיתיות.</div>
   <div id="progress" class="banner progress" hidden><span id="progressText"></span><div class="bar"><div id="progressBar"></div></div></div>
 
   <nav class="tabs" role="tablist">
@@ -35,12 +35,12 @@
     <section id="tab-overview" class="tab active">
       <div id="empty" class="card empty" hidden>
         <h2>עדיין אין הרצות</h2>
-        <p>לחצו על "הרצה חדשה" כדי לשאול את כל המנועים את רשימת הפרומפטים ולמדוד איפה כלל מופיעה.</p>
+        <p>לחצו על "הרצה חדשה" כדי לשאול את כל המנועים את רשימת הפרומפטים ולמדוד איפה המותג שלכם מופיע.</p>
       </div>
       <div id="kpis" class="kpis"></div>
       <div class="grid2">
         <div class="card"><h2>Share of Voice — אחוז התשובות שמזכירות כל חברה</h2><div id="sov"></div></div>
-        <div class="card"><h2>מה אומרים על <span class="mainName"></span> ולא אומרים על כלל</h2><p class="muted small">הנימוקים שהמנועים נותנים כשהם ממליצים על כל חברה</p><div id="attrGap"></div></div>
+        <div class="card"><h2>מה אומרים על <span class="mainName"></span> ולא אומרים על <span class="targetName"></span></h2><p class="muted small">הנימוקים שהמנועים נותנים כשהם ממליצים על כל חברה</p><div id="attrGap"></div></div>
       </div>
       <div class="card"><h2>כיסוי לפי מנוע</h2><div id="perEngine"></div></div>
     </section>
@@ -69,7 +69,7 @@
     <section id="tab-sources" class="tab">
       <div class="card">
         <h2>המקורות שהמנועים מצטטים</h2>
-        <p class="muted small">"כשהמתחרה מוזכר וכלל לא" = האתרים שמזינים את המתחרים. שם צריך להיות.</p>
+        <p class="muted small">"כשהמתחרה מוזכר ואתם לא" = האתרים שמזינים את המתחרים. שם צריך להיות.</p>
         <div class="table-wrap"><table id="sources"></table></div>
       </div>
     </section>
@@ -91,7 +91,7 @@
         <button id="savePrompts">שמירה</button> <span id="promptsSaved" class="muted small"></span>
       </div>
       <div class="card">
-        <h2>העמודים של כלל לכל נושא</h2>
+        <h2>העמודים שלכם לכל נושא</h2>
         <p class="muted small">בדיקת העמודים משווה את העמוד הזה לעמודי המתחרים שהמנועים ציטטו.</p>
         <div id="pagesForm"></div>
         <button id="savePages">שמירה</button> <span id="pagesSaved" class="muted small"></span>

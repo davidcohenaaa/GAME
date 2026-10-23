@@ -1,6 +1,6 @@
 import { availableEngines } from './engines/index.js';
 import { analyzeAnswer, compileBrands } from './analyze.js';
-import { readConfig } from './config.js';
+import { readConfig, brandsConfigName } from './config.js';
 import { saveRun } from './store.js';
 
 const active = new Map();
@@ -24,7 +24,7 @@ export function planRun({ engineIds, promptIds, repetitions } = {}) {
 export function startRun(options = {}) {
   const { engines, prompts, reps, calls } = planRun(options);
   if (!calls) throw new Error('אין מנועים פעילים או פרומפטים לבדיקה. בדקו את המפתחות בקובץ .env');
-  const brandsConfig = readConfig('brands');
+  const brandsConfig = readConfig(brandsConfigName());
   const compiled = compileBrands(brandsConfig);
   const run = {
     id: new Date().toISOString().replace(/[:.]/g, '-'),

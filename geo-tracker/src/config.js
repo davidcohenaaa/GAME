@@ -17,3 +17,8 @@ export function readConfig(name) {
 export function writeConfig(name, value) {
   fs.writeFileSync(path.join(ROOT, 'config', `${name}.json`), JSON.stringify(value, null, 2) + '\n');
 }
+
+// Which brands file to use: the real one, or fictional insurers in demo mode.
+export function brandsConfigName() {
+  return process.env.BRANDS_FILE || (process.env.MOCK === '1' ? 'brands.demo' : 'brands');
+}

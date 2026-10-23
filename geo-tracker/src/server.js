@@ -1,7 +1,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadEnv, ROOT, readConfig, writeConfig } from './config.js';
+import { loadEnv, ROOT, readConfig, writeConfig, brandsConfigName } from './config.js';
 
 loadEnv();
 
@@ -56,7 +56,7 @@ async function api(req, res, url) {
     writeConfig('prompts', { prompts });
     return send(res, 200, { prompts });
   }
-  if (p === '/api/brands' && req.method === 'GET') return send(res, 200, readConfig('brands'));
+  if (p === '/api/brands' && req.method === 'GET') return send(res, 200, readConfig(brandsConfigName()));
   if (p === '/api/pages' && req.method === 'GET') return send(res, 200, readConfig('pages'));
   if (p === '/api/pages' && req.method === 'PUT') {
     const body = await readBody(req);

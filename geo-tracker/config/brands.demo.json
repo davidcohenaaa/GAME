@@ -1,0 +1,15 @@
+{
+  "_note": "חברות בדויות לדמו בלבד (MOCK=1). אין קשר לחברות ביטוח אמיתיות.",
+  "target": "oren",
+  "mainCompetitor": "nesher",
+  "brands": [
+    { "id": "oren", "name": "ביטוח אורן", "domains": ["oren-demo.example"], "aliases": ["ביטוח אורן", "אורן ביטוח"] },
+    { "id": "nesher", "name": "ביטוח נשר", "domains": ["nesher-demo.example"], "aliases": ["ביטוח נשר", "נשר ביטוח"] },
+    { "id": "shaked", "name": "שקד ביטוח", "domains": ["shaked-demo.example"], "aliases": ["שקד ביטוח", "ביטוח שקד"] },
+    { "id": "tamar", "name": "תמר ביטוח", "domains": ["tamar-demo.example"], "aliases": ["תמר ביטוח", "ביטוח תמר"] },
+    { "id": "rimon", "name": "רימון ביטוח", "domains": ["rimon-demo.example"], "aliases": ["רימון ביטוח", "ביטוח רימון"] },
+    { "id": "alon", "name": "אלון ישיר", "domains": ["alon-demo.example"], "aliases": ["אלון ישיר"] },
+    { "id": "dekel", "name": "דקל ביטוח", "domains": ["dekel-demo.example"], "aliases": ["דקל ביטוח", "ביטוח דקל"] },
+    { "id": "gefen", "name": "גפן ביטוח", "domains": ["gefen-demo.example"], "aliases": ["גפן ביטוח", "ביטוח גפן"] }
+  ]
+}

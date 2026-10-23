@@ -20,7 +20,7 @@ export function exportHtml(run) {
     report,
     answers: run.answers,
   };
-  const description = `כלל מוזכרת ב-${Math.round(report.kpi.targetRate * 100)}% מתשובות מנועי הבינה, ${report.brandNames[report.mainCompetitor]} ב-${Math.round(report.kpi.mainRate * 100)}%.`;
+  const description = `${report.brandNames[report.target]} מוזכרת ב-${Math.round(report.kpi.targetRate * 100)}% מתשובות מנועי הבינה, ${report.brandNames[report.mainCompetitor]} ב-${Math.round(report.kpi.mainRate * 100)}%.`;
   return read('index.html')
     .replace('<title>GEO Tracker</title>', `<title>GEO Tracker Report</title>\n  <meta name="description" content="${description}">`)
     .replace('<link rel="stylesheet" href="styles.css">', () => `<style>\n${read('styles.css')}\n</style>`)

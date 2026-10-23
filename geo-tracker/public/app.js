@@ -49,11 +49,13 @@ function renderOverview(r) {
   const k = r.kpi;
   const main = r.brandNames[r.mainCompetitor];
   document.querySelectorAll('.mainName').forEach((e) => { e.textContent = main; });
+  const tName = r.brandNames[r.target];
+  document.querySelectorAll('.targetName').forEach((e) => { e.textContent = tName; });
   $('#kpis').innerHTML = [
-    ['כלל מוזכרת', pc(k.targetRate), `${main}: ${pc(k.mainRate)}`, k.targetRate >= k.mainRate ? 'good' : 'bad'],
-    ['כלל ראשונה ברשימה', pc(k.targetFirst), `${main}: ${pc(k.mainFirst)}`, k.targetFirst >= k.mainFirst ? 'good' : 'bad'],
+    [`${tName} מוזכרת`, pc(k.targetRate), `${main}: ${pc(k.mainRate)}`, k.targetRate >= k.mainRate ? 'good' : 'bad'],
+    [`${tName} ראשונה ברשימה`, pc(k.targetFirst), `${main}: ${pc(k.mainFirst)}`, k.targetFirst >= k.mainFirst ? 'good' : 'bad'],
     ['תאים מכוסים', `${k.coveredCells}/${k.totalCells}`, 'פרומפט×מנוע עם אזכור ב-50%+', k.coveredCells === k.totalCells ? 'good' : ''],
-    ['פרומפטים בפער', k.gapPrompts, `${main} מוזכרת יותר מכלל`, k.gapPrompts ? 'bad' : 'good'],
+    ['פרומפטים בפער', k.gapPrompts, `${main} מוזכרת יותר מ${tName}`, k.gapPrompts ? 'bad' : 'good'],
   ].map(([t, v, s, c]) => `<div class="kpi ${c}"><div class="muted small">${t}</div><div class="kpi-v">${v}</div><div class="muted small">${esc(s)}</div></div>`).join('');
 
   $('#sov').innerHTML = r.sov.filter((s) => s.rate > 0 || s.brand === r.target).map((s) => `
@@ -62,11 +64,11 @@ function renderOverview(r) {
     </div>`).join('');
 
   const gap = r.attributeGap.filter((a) => a.rival > 0 || a.target > 0);
-  $('#attrGap').innerHTML = gap.length ? `<table class="compact"><thead><tr><th>נימוק</th><th>${esc(main)}</th><th>כלל</th></tr></thead><tbody>${gap.map((a) => `
+  $('#attrGap').innerHTML = gap.length ? `<table class="compact"><thead><tr><th>נימוק</th><th>${esc(main)}</th><th>${esc(tName)}</th></tr></thead><tbody>${gap.map((a) => `
     <tr class="${a.rival - a.target >= 0.2 ? 'row-bad' : ''}"><td>${esc(a.label)}</td><td>${pc(a.rival)}</td><td>${pc(a.target)}</td></tr>`).join('')}</tbody></table>`
     : '<p class="muted">אין מספיק נתונים.</p>';
 
-  $('#perEngine').innerHTML = `<table class="compact"><thead><tr><th>מנוע</th><th>כלל</th><th>${esc(main)}</th><th></th></tr></thead><tbody>${r.engines.map((e) => {
+  $('#perEngine').innerHTML = `<table class="compact"><thead><tr><th>מנוע</th><th>${esc(tName)}</th><th>${esc(main)}</th><th></th></tr></thead><tbody>${r.engines.map((e) => {
     const t = r.sov.find((s) => s.brand === r.target)?.perEngine[e.id] || 0;
     const m = r.sov.find((s) => s.brand === r.mainCompetitor)?.perEngine[e.id] || 0;
     return `<tr><td>${esc(e.label)} <span class="muted small">${esc(e.model)}</span></td><td>${pc(t)}</td><td>${pc(m)}</td><td>${t < m ? '<span class="chip missing">פער</span>' : '<span class="chip present">תקין</span>'}</td></tr>`;
@@ -76,7 +78,7 @@ function renderOverview(r) {
 function renderRecs(r) {
   $('#aiPlanBtn').hidden = !state.status?.aiPlan;
   if (!r.recommendations.length) {
-    $('#recs').innerHTML = '<p class="good-text">כלל מכוסה בכל הפרומפטים ובכל המנועים. 🎉</p>';
+    $('#recs').innerHTML = `<p class="good-text">${esc(r.brandNames[r.target])} מכוסה בכל הפרומפטים ובכל המנועים.</p>`;
     return;
   }
   $('#recs').innerHTML = r.recommendations.map((x) => `
@@ -84,7 +86,7 @@ function renderRecs(r) {
       <summary>
         <span class="score" title="ציון עדיפות">${x.score}</span>
         <span class="rec-q">${esc(x.prompt)}</span>
-        <span class="muted small">${esc(x.topic)} · כלל ${pc(x.rate)} · ${esc(x.mainName)} ${pc(x.mainRate)}${x.missingEngines.length ? ` · חסרה ב: ${esc(x.missingEngines.join(', '))}` : ''}</span>
+        <span class="muted small">${esc(x.topic)} · ${esc(r.brandNames[r.target])} ${pc(x.rate)} · ${esc(x.mainName)} ${pc(x.mainRate)}${x.missingEngines.length ? ` · חסרה ב: ${esc(x.missingEngines.join(', '))}` : ''}</span>
       </summary>
       <ol class="actions">${x.actions.map((a) => `
         <li class="act act-${a.type}"><strong>${esc(a.title)}</strong><div>${esc(a.detail)}</div>
@@ -100,24 +102,24 @@ function renderRecs(r) {
 
 const STATUS_LABEL = { lead: 'ראשונה', present: 'מוזכרת', weak: 'לפעמים', missing: 'חסרה', absent: '—', nodata: 'שגיאה' };
 function renderMatrix(r) {
-  const head = `<thead><tr><th>פרומפט</th><th>נושא</th>${r.engines.map((e) => `<th>${esc(e.label)}</th>`).join('')}<th>כלל</th><th>${esc(r.brandNames[r.mainCompetitor])}</th></tr></thead>`;
+  const head = `<thead><tr><th>פרומפט</th><th>נושא</th>${r.engines.map((e) => `<th>${esc(e.label)}</th>`).join('')}<th>${esc(r.brandNames[r.target])}</th><th>${esc(r.brandNames[r.mainCompetitor])}</th></tr></thead>`;
   const body = r.rows.map((row) => `<tr>
     <td><a href="#" data-answers="${esc(row.prompt.id)}">${esc(row.prompt.text)}</a></td><td class="muted small">${esc(row.prompt.topic)}</td>
     ${r.engines.map((e) => {
       const c = row.cells[e.id];
-      return `<td><span class="chip ${c.status}" title="כלל ${pc(c.rate)}, ראשונה ${pc(c.firstRate)}, ${esc(r.brandNames[r.mainCompetitor])} ${pc(c.mainRate)}">${STATUS_LABEL[c.status]} ${c.n ? pc(c.rate) : ''}</span></td>`;
+      return `<td><span class="chip ${c.status}" title="${esc(r.brandNames[r.target])} ${pc(c.rate)}, ראשונה ${pc(c.firstRate)}, ${esc(r.brandNames[r.mainCompetitor])} ${pc(c.mainRate)}">${STATUS_LABEL[c.status]} ${c.n ? pc(c.rate) : ''}</span></td>`;
     }).join('')}
     <td>${pc(row.rate)}</td><td>${pc(row.mainRate)}</td></tr>`).join('');
   $('#matrix').innerHTML = head + `<tbody>${body}</tbody>`;
 }
 
-const KIND = { own: 'כלל', competitor: 'מתחרה', 'third-party': 'צד ג׳' };
+const KIND = { own: 'שלך', competitor: 'מתחרה', 'third-party': 'צד ג׳' };
 function renderSources(r) {
   if (!r.sources.length) {
     $('#sources').innerHTML = '<tr><td class="muted">המנועים לא החזירו מקורות בהרצה הזו.</td></tr>';
     return;
   }
-  $('#sources').innerHTML = `<thead><tr><th>דומיין</th><th>סוג</th><th>צוטט בתשובות</th><th>מתוכן עם כלל</th><th>כשהמתחרה מוזכר וכלל לא</th><th>מנועים</th></tr></thead><tbody>${r.sources.slice(0, 60).map((s) => `
+  $('#sources').innerHTML = `<thead><tr><th>דומיין</th><th>סוג</th><th>צוטט בתשובות</th><th>מתוכן עם ${esc(r.brandNames[r.target])}</th><th>כשהמתחרה מוזכר ואתם לא</th><th>מנועים</th></tr></thead><tbody>${r.sources.slice(0, 60).map((s) => `
     <tr class="${s.kind === 'third-party' && s.withMainNoTarget > s.withTarget ? 'row-bad' : ''}">
       <td><a href="${esc(s.urls[0] || `https://${s.domain}`)}" target="_blank" rel="noopener" dir="ltr">${esc(s.domain)}</a></td>
       <td><span class="chip kind-${s.kind}">${KIND[s.kind]}${s.brand && s.kind === 'competitor' ? ` · ${esc(r.brandNames[s.brand])}` : ''}</span></td>
@@ -135,9 +137,9 @@ function renderHistory() {
       <polyline points="${pts('mainRate')}" class="line-main"/>
       <polyline points="${pts('targetRate')}" class="line-target"/>
     </svg>
-    <div class="legend"><span class="dot target"></span>כלל <span class="dot main"></span>${esc(state.report?.brandNames[state.report.mainCompetitor] || 'הפניקס')}</div>`
+    <div class="legend"><span class="dot target"></span>${esc(state.report?.brandNames[state.report.target] || '')} <span class="dot main"></span>${esc(state.report?.brandNames[state.report.mainCompetitor] || 'המתחרה')}</div>`
     : '<p class="muted small">גרף המגמה יופיע אחרי שתי הרצות לפחות.</p>';
-  $('#history').innerHTML = `<thead><tr><th>תאריך</th><th>תווית</th><th>מנועים</th><th>כלל</th><th>מתחרה ראשי</th><th>שגיאות</th></tr></thead><tbody>${state.runs.map((x) => `
+  $('#history').innerHTML = `<thead><tr><th>תאריך</th><th>תווית</th><th>מנועים</th><th>${esc(state.report?.brandNames[state.report.target] || 'המותג שלך')}</th><th>מתחרה ראשי</th><th>שגיאות</th></tr></thead><tbody>${state.runs.map((x) => `
     <tr><td>${new Date(x.startedAt).toLocaleString('he-IL')}</td><td>${esc(x.label)}</td><td class="small">${esc(x.engines.join(', '))}</td>
     <td>${x.targetRate == null ? x.status : pc(x.targetRate)}</td><td>${x.mainRate == null ? '' : pc(x.mainRate)}</td><td>${x.errors}</td></tr>`).join('')}</tbody>`;
 }
@@ -171,7 +173,7 @@ async function showAnswers(promptId) {
     <article class="answer">
       <header><strong>${esc(label[a.engine])}</strong> <span class="muted small">חזרה ${a.rep + 1}</span>
         ${a.mentions.map((m) => `<span class="chip ${m.brand === r.target ? 'lead' : 'neutral'}">${m.rank}. ${esc(r.brandNames[m.brand])}</span>`).join('')}
-        ${a.mentions.some((m) => m.brand === r.target) ? '' : '<span class="chip missing">כלל לא מוזכרת</span>'}
+        ${a.mentions.some((m) => m.brand === r.target) ? '' : `<span class="chip missing">${esc(r.brandNames[r.target])} לא מוזכרת</span>`}
       </header>
       ${a.error ? `<p class="bad-text">${esc(a.error)}</p>` : `<div class="answer-text">${highlight(a.text, a.mentions, r.brandNames)}</div>`}
       ${a.citations.length ? `<div class="cites">${a.citations.slice(0, 12).map((c) => `<a href="${esc(c.url)}" target="_blank" rel="noopener" class="chip kind-${c.brand === r.target ? 'own' : c.brand ? 'competitor' : 'third-party'}" dir="ltr">${esc(c.domain || c.title || c.url)}</a>`).join('')}</div>` : ''}
@@ -186,13 +188,13 @@ async function runAudit(promptId) {
     const a = await api(`/api/runs/${state.runId}/page-audit`, { method: 'POST', body: { promptId } });
     const rivals = a.rivals.filter((x) => !x.error);
     box.innerHTML = `
-      ${a.ownUrl ? `<p>העמוד של כלל: <a href="${esc(a.ownUrl)}" target="_blank" rel="noopener">${esc(a.ownUrl)}</a>${a.own?.error ? ` <span class="bad-text">(${esc(a.own.error)})</span>` : ''}</p>`
-        : `<p class="bad-text">אין לכלל עמוד שמשויך לנושא "${esc(a.topic)}" ואף מנוע לא ציטט עמוד של כלל. הגדירו עמוד בלשונית ההגדרות — או שזה בדיוק הפער: צריך ליצור אותו.</p>`}
+      ${a.ownUrl ? `<p>העמוד שלכם: <a href="${esc(a.ownUrl)}" target="_blank" rel="noopener">${esc(a.ownUrl)}</a>${a.own?.error ? ` <span class="bad-text">(${esc(a.own.error)})</span>` : ''}</p>`
+        : `<p class="bad-text">אין לכם עמוד שמשויך לנושא "${esc(a.topic)}" ואף מנוע לא ציטט עמוד שלכם. הגדירו עמוד בלשונית ההגדרות — או שזה בדיוק הפער: צריך ליצור אותו.</p>`}
       ${!a.rivals.length ? '<p class="muted">המנועים לא ציטטו עמודי מתחרים בשאלה הזו.</p>' : ''}
       ${a.missing.length ? `<h4>מה יש אצל המתחרים וחסר אצלך:</h4><ul class="missing-list">${a.missing.map((m) => `<li><strong>${esc(m.label)}</strong> — ב-${m.rivalsWith}/${m.of} עמודי מתחרים. <span class="muted small">${esc(m.example)}</span></li>`).join('')}</ul>`
         : rivals.length ? '<p class="good-text">העמוד שלך כולל את כל מה שיש בעמודי המתחרים שנבדקו.</p>' : ''}
       ${rivals.length ? `<table class="compact"><thead><tr><th>עמוד</th><th>מילים</th><th>מחירים</th><th>טבלאות</th><th>FAQ Schema</th><th>תאריך עדכון</th></tr></thead><tbody>
-        ${[a.own && !a.own.error ? { ...a.own, mine: true } : null, ...rivals].filter(Boolean).map((p) => `<tr class="${p.mine ? 'is-target' : ''}"><td class="small"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title || p.url)}</a>${p.mine ? ' (כלל)' : ''}</td><td>${p.words}</td><td>${p.signals.priceNumbers}</td><td>${p.signals.tables}</td><td>${p.signals.faqSchema ? '✓' : '—'}</td><td>${p.signals.updatedDate ? '✓' : '—'}</td></tr>`).join('')}
+        ${[a.own && !a.own.error ? { ...a.own, mine: true } : null, ...rivals].filter(Boolean).map((p) => `<tr class="${p.mine ? 'is-target' : ''}"><td class="small"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title || p.url)}</a>${p.mine ? ' (שלכם)' : ''}</td><td>${p.words}</td><td>${p.signals.priceNumbers}</td><td>${p.signals.tables}</td><td>${p.signals.faqSchema ? '✓' : '—'}</td><td>${p.signals.updatedDate ? '✓' : '—'}</td></tr>`).join('')}
       </tbody></table>` : ''}`;
   } catch (err) {
     box.innerHTML = `<p class="bad-text">${esc(err.message)}</p>`;
@@ -310,7 +312,7 @@ async function loadSettings() {
   $('#promptsText').value = prompts.map((p) => `${p.text} | ${p.topic} | ${p.intent}`).join('\n');
   const { pages } = await api('/api/pages');
   $('#pagesForm').innerHTML = Object.entries(pages).map(([topic, url]) => `
-    <label class="page-row"><span>${esc(topic)}</span><input type="url" data-topic="${esc(topic)}" value="${esc(url)}" placeholder="https://www.clalbit.co.il/..." dir="ltr"></label>`).join('');
+    <label class="page-row"><span>${esc(topic)}</span><input type="url" data-topic="${esc(topic)}" value="${esc(url)}" placeholder="https://www.example.co.il/..." dir="ltr"></label>`).join('');
 }
 $('#savePrompts').addEventListener('click', async () => {
   const prompts = $('#promptsText').value.split('\n').map((l) => l.split('|').map((x) => x.trim())).filter(([t]) => t)
