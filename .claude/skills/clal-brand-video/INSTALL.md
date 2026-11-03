@@ -42,6 +42,13 @@ bash ~/.claude/skills/clal-brand-video/scripts/check_env.sh
 
 הסקיל נטען אוטומטית. אפשר להפעיל אותו גם ישירות עם `/clal-brand-video`.
 
+## שיחות רגילות ב-claude.ai (לא Code)
+1. ב-claude.ai נכנסים ל-Settings ואז Capabilities. מוודאים ש-Code execution ו-Skills פעילים.
+2. ב-Skills לוחצים Upload skill ובוחרים את `clal-brand-video.zip`.
+3. בשיחה כותבים "סרטון כלל לפי ספר המותג…" ומצרפים את ה-PDF.
+
+בסביבת השיחה לרוב אין דפדפן לרינדור וידאו. במקרה כזה מתקבל קובץ HTML שמתנגן בדפדפן, עם הפונטים בפנים, במקום MP4. ל-MP4 מלא עם מוזיקה משתמשים בסקיל ב-Claude Code.
+
 ## עדכון
 מחליפים את התיקייה בגרסה החדשה מהריפו `davidcohenaaa/GAME` (הנתיב `.claude/skills/clal-brand-video`).
 
