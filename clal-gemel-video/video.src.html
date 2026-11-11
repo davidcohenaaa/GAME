@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>קופת גמל להשקעה – כלל ביטוח ופיננסים</title>
+<!-- סרטון הסבר 16:9 עם קריינות. מקור: נבנה ל-video.html עם build.py --cues cues.json (מזריק נכסים ותזמוני קריינות) -->
+<style>
+  @font-face{font-family:'PolinX';font-weight:100 900;src:url(brand-fonts/Polin-Extralight.otf)}
+  @font-face{font-family:'PolinL';font-weight:100 900;src:url(brand-fonts/Polin-Light.otf)}
+  @font-face{font-family:'PolinR';font-weight:100 900;src:url(brand-fonts/Polin-Regular.otf)}
+  @font-face{font-family:'PolinM';font-weight:100 900;src:url(brand-fonts/Polin-Medium.otf)}
+  @font-face{font-family:'PolinS';font-weight:100 900;src:url(brand-fonts/Polin-Semibold.otf)}
+  @font-face{font-family:'Heebo';font-weight:100 900;src:url(fonts/heebo-hebrew.woff2) format('woff2');unicode-range:U+0590-05FF,U+20AA}
+  @font-face{font-family:'Heebo';font-weight:100 900;src:url(fonts/heebo-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F}
+
+  :root{
+    --cream:#FBF2EB; --ink:#262B3A; --navy:#293768; --digital:#5A7BEC; --sky:#D2E1FF;
+    --orange:#FF8C64; --pink:#FFBDBD; --green:#59D189; --mint:#B0FFAE; --lime:#F8FFD2;
+    --symbol:#507CF3; --mint60:#DFFFDF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:var(--cream)}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden}
+  /* שכבות: רקעים ← הקו הרציף ← תוכן הסצנות ← כתוביות ולוגו פינתי. הקו עובר "מאחורי" הכתמים והאייקונים */
+  #bgL,#fgL,#topL{position:absolute;inset:0}
+  #lineLayer{position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none}
+  .bg,.sc{position:absolute;inset:0;display:none}
+  .x{font-family:'PolinX','PolinR','Heebo';font-weight:200}
+  .l{font-family:'PolinL','PolinR','Heebo';font-weight:300}
+  .r{font-family:'PolinR','Heebo';font-weight:400}
+  .m{font-family:'PolinM','PolinR','Heebo';font-weight:500}
+  .s{font-family:'PolinS','PolinR','Heebo';font-weight:600}
+  .pill{display:inline-block;border-radius:999px;padding:.04em .42em .14em;border:.055em solid currentColor;line-height:1;vertical-align:middle}
+  .pill.f{border-color:transparent}
+  .pill.one{padding:.04em .5em .14em}
+  .gap{display:inline-block;width:.18em}
+  /* כותרת בשתי שורות מימין: דקה + מודגשת */
+  .hd{position:absolute;right:130px;width:900px;text-align:right;direction:rtl;white-space:nowrap}
+  .h1{font-size:66px;line-height:1.2}
+  .h2{font-size:92px;line-height:1.12}
+  .hs{font-size:40px;margin-top:20px}
+  .ic{position:absolute}
+  .ic svg{width:100%;height:100%;display:block;overflow:visible}
+  .blob{position:absolute;border-radius:50%}
+  .lbl{position:absolute;width:520px;text-align:center;white-space:nowrap}
+  .grp{position:absolute;left:0;top:0;width:0;height:0}
+  .mv{position:absolute;inset:0}
+  .half{position:absolute;top:0;bottom:0}
+  #cap{position:absolute;bottom:58px;text-align:center;font-size:38px;line-height:1.3;white-space:normal}
+  #corner{position:absolute;right:70px;top:52px;width:300px}
+  #corner svg,.logo svg{width:100%;height:auto;display:block}
+  #corner svg path:nth-last-child(-n+2),.logo svg path:nth-last-child(-n+2){fill:var(--symbol)}
+
+  @keyframes in{from{opacity:0}to{opacity:1}}
+  @keyframes out{from{opacity:1}to{opacity:0}}
+  @keyframes rise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+  @keyframes pop{0%{opacity:0;transform:scale(.55)}60%{opacity:1;transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+  @keyframes popOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.6)}}
+  @keyframes reveal{from{clip-path:ellipse(0px 0px at var(--ox) var(--oy))}to{clip-path:ellipse(2400px 1900px at var(--ox) var(--oy))}}
+  @keyframes slideL{from{transform:translateX(100%)}to{transform:none}}
+  @keyframes shake{0%,100%{transform:none}20%{transform:rotate(-9deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(4deg)}}
+  @keyframes apartL{from{transform:none}to{transform:translateX(-50px)}}
+  @keyframes apartR{from{transform:none}to{transform:translateX(50px)}}
+  @keyframes floatUp{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-90px)}}
+  @keyframes conv{0%{opacity:0;transform:translate(var(--dx),var(--dy))}20%{opacity:1;transform:translate(var(--dx),var(--dy))}100%{opacity:0;transform:translate(0,0) scale(.3)}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+</style>
+</head>
+<body>
+<div id="stage"><div id="bgL"></div></div>
+
+<!-- אייקונים רשמיים מספר המותג (עמ׳ 53) -->
+<template id="wallet"><!--ASSET:icons/wallet--></template>
+<template id="house"><!--ASSET:icons/house--></template>
+<template id="heart"><!--ASSET:icons/heart--></template>
+<template id="sprout"><!--ASSET:icons/sprout--></template>
+<template id="location"><!--ASSET:icons/location--></template>
+<template id="lock"><!--ASSET:icons/lock--></template>
+<template id="calculator"><!--ASSET:icons/calculator--></template>
+<template id="bank"><!--ASSET:icons/bank--></template>
+<template id="hand-coins"><!--ASSET:icons/hand-coins--></template>
+<template id="calendar-check"><!--ASSET:icons/calendar-check--></template>
+<template id="check-circle"><!--ASSET:icons/check-circle--></template>
+<template id="signpost"><!--ASSET:icons/signpost--></template>
+<template id="map"><!--ASSET:icons/map--></template>
+<template id="umbrella"><!--ASSET:icons/umbrella--></template>
+<template id="gear"><!--ASSET:icons/gear--></template>
+<!-- אייקונים משלימים שצוירו בסגנון הספר (לאישור מותג) -->
+<template id="piggy"><!--ASSET:icons/drawn/piggy--></template>
+<template id="lock-open"><!--ASSET:icons/drawn/lock-open--></template>
+<template id="coins"><!--ASSET:icons/drawn/coins--></template>
+<template id="clock"><!--ASSET:icons/drawn/clock--></template>
+<template id="magnifier"><!--ASSET:icons/drawn/magnifier--></template>
+<template id="suitcase"><!--ASSET:icons/drawn/suitcase--></template>
+<template id="target"><!--ASSET:icons/drawn/target--></template>
+<template id="logoline"><!--ASSET:logo-line--></template>
+
+<script>
+// תזמוני הקריינות (vo_cues.py), מוזרקים בבנייה: build.py --cues cues.json
+const CUES = /*CUES*/null;
+const T = CUES.duration;
+const C = (s, i) => CUES.cues.find(c => c.sec === s && c.i === i).start;
+const W = 1920, H = 1080;
+
+const tpl = id => document.getElementById(id).innerHTML;
+const A = (name, at, dur = .45, ease = 'cubic-bezier(.2,.8,.2,1)', fill = 'both') => `animation:${name} ${dur}s ${ease} ${at}s ${fill};`;
+const OUT = (at, dur = .3, name = 'out') => A(name, at, dur, 'ease-in', 'forwards'); // יציאה: forwards בלבד, כדי לא לדרוס את הכניסה
+const pill = (txt, cls = '', style = '') => `<span class="pill ${cls}${[...txt].length === 1 ? ' one' : ''}" style="${style}">${txt}</span>`;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+const easeIO = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const lerp = (a, b, x) => a + (b - a) * x;
+// אייקון קו בגודל size, ממורכז ב-(cx,cy), בצבע אחד
+const ic = (id, color, cx, cy, size, extra = '') => `<div class="ic" style="left:${cx - size / 2}px;top:${cy - size / 2}px;width:${size}px;height:${size}px;color:${color};${extra}">${tpl(id)}</div>`;
+// כתם: אליפסה שטוחה בצבע אחד (בלי צל או גרדיאנט)
+const blob = (color, cx, cy, rx, ry, extra = '') => `<div class="blob" style="left:${cx - rx}px;top:${cy - ry}px;width:${2 * rx}px;height:${2 * ry}px;background:${color};${extra}"></div>`;
+const lbl = (txt, cx, y, color, extra = '', size = 30, cls = 'r') => `<div class="lbl ${cls}" style="left:${cx - 260}px;top:${y}px;font-size:${size}px;color:${color};${extra}">${txt}</div>`;
+const NAVY = '#293768', INK = '#262B3A', CREAM = '#FBF2EB', DIGITAL = '#5A7BEC', GREEN = '#59D189';
+
+// ---------- הקו הרציף ----------
+const N = 360;
+const resample = pts => {
+  const L = [0];
+  for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const tot = L[L.length - 1], out = [];
+  for (let k = 0, j = 1; k < N; k++) {
+    const d = tot * k / (N - 1);
+    while (j < L.length - 1 && L[j] < d) j++;
+    const f = (d - L[j - 1]) / ((L[j] - L[j - 1]) || 1);
+    out.push([lerp(pts[j - 1][0], pts[j][0], f), lerp(pts[j - 1][1], pts[j][1], f)]);
+  }
+  return out;
+};
+const seg = (p, q) => resample([p, q]);
+const ell = (cx, cy, rx, ry, a0 = 0) => resample(Array.from({ length: 161 }, (_, i) => { const a = a0 + 2 * Math.PI * i / 160; return [cx + rx * Math.cos(a), cy - ry * Math.sin(a)]; }));
+const quad = (p0, p1, p2, n = 40) => Array.from({ length: n + 1 }, (_, i) => { const u = i / n; return [(1 - u) * (1 - u) * p0[0] + 2 * u * (1 - u) * p1[0] + u * u * p2[0], (1 - u) * (1 - u) * p0[1] + 2 * u * (1 - u) * p1[1] + u * u * p2[1]]; });
+const fillet = (pts, r) => { // פינות מעוגלות בפוליליין
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [p0, p1, p2] = [pts[i - 1], pts[i], pts[i + 1]];
+    const d1 = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]), d2 = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), rr = Math.min(r, d1 / 2, d2 / 2);
+    const a = [p1[0] + (p0[0] - p1[0]) * rr / d1, p1[1] + (p0[1] - p1[1]) * rr / d1], b = [p1[0] + (p2[0] - p1[0]) * rr / d2, p1[1] + (p2[1] - p1[1]) * rr / d2];
+    for (let k = 0; k <= 12; k++) { const u = k / 12; out.push([(1 - u) * (1 - u) * a[0] + 2 * u * (1 - u) * p1[0] + u * u * b[0], (1 - u) * (1 - u) * a[1] + 2 * u * (1 - u) * p1[1] + u * u * b[1]]); }
+  }
+  out.push(pts[pts.length - 1]); return out;
+};
+
+// גיאומטריה של הסצנות
+const PIG2a = [230, 610], PIG2b = [560, 720], WAL = [830, 610];
+const PINS = [[870, 330], [560, 250], [250, 330]];
+const FLOW = [[940, 470], [575, 470], [210, 470]];
+const ROOT = [540, 800];
+const NODES = [
+  [25, 'target', 'מטרה', null], [51, 'clock', 'זמן', null], [77, 'map', 'מסלולים', null],
+  [103, 'umbrella', 'סיכון', null], [129, 'gear', 'דמי ניהול', null], [155, 'magnifier', 'תשואות עבר', null],
+].map(([a, id, label]) => { const r = a * Math.PI / 180; return { x: ROOT[0] + 420 * Math.cos(r), y: ROOT[1] - 360 * Math.sin(r), id, label }; });
+// מתי כל צומת נחשף – לפי מיקום המילה בתוך המשפט
+[C(3, 1) + 1.55, C(3, 1) + 3.05, C(3, 2) + 1.4, C(3, 3) + .1, C(3, 4) + .15, C(3, 4) + .95].forEach((t, k) => NODES[k].t = t);
+const LANES = [420, 580, 740];
+
+const SH = {
+  ul0: seg([1790, 560], [1000, 560]),                 // נמדד מחדש לפי הכותרת
+  orbit: ell(560, 470, 350, 270),
+  timeline: seg([940, 800], [180, 800]),
+  arc: resample(quad(WAL, [530, 200], PIG2a)),
+  fork: resample([].concat(
+    quad(PIG2b, [PINS[0][0], PIG2b[1]], PINS[0]), quad(PINS[0], [PINS[0][0], PIG2b[1]], PIG2b),
+    quad(PIG2b, [560, 480], PINS[1]), quad(PINS[1], [560, 480], PIG2b),
+    quad(PIG2b, [PINS[2][0], PIG2b[1]], PINS[2]))),
+  ring3: ell(560, 450, 250, 215),
+  wave: t => resample(Array.from({ length: 121 }, (_, i) => { const x = 940 - 760 * i / 120; return [x, 770 + 16 * Math.sin(x / 55 + t * 3.2)]; })), // צורה דינמית: גל "נזיל"
+  ground4: seg([980, 690], [140, 690]),
+  div4: seg([560, 770], [560, 180]),
+  div5: seg([960, 1130], [960, -50]),
+  flow6: seg(FLOW[0], FLOW[2]),
+  ring7: ell(ROOT[0], ROOT[1], 128, 108),
+  branch: resample(NODES.flatMap(n => [ROOT, [n.x, n.y]])), // שלט ← צומת ← שלט ← צומת…
+  snake: resample(fillet([[880, LANES[0]], [720, LANES[0]], [620, LANES[1]], [440, LANES[1]], [340, LANES[2]], [150, LANES[2]]], 70)),
+  ring9: ell(560, 470, 300, 250),
+  ul10: seg([1160, 470], [760, 470]),                 // נמדד מחדש לפי שם המוצר
+};
+// כמה מהענפים מצויר כשמגיעים לכל צומת (לפי אורך מצטבר)
+const BR = (() => {
+  const pts = NODES.flatMap(n => [ROOT, [n.x, n.y]]), L = [0];
+  for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const tot = L[L.length - 1];
+  return NODES.map((_, k) => ({ at: L[2 * k + 1] / tot, back: L[2 * k] / tot }));
+})();
+
+const S1 = 0, S2 = C(1, 3), S3 = C(1, 5), S4 = C(2, 0), S5 = C(2, 2), S6 = C(2, 6), S7 = C(3, 0), S8 = C(3, 6), S9 = C(4, 0), S10 = C(4, 2);
+const K = [
+  [0, 'ul0', NAVY, 1, 0], [.75, 'ul0', NAVY, 1, 0], [1.7, 'ul0', NAVY, 1, 1], [C(1, 1), 'ul0', NAVY, 1, 1],
+  [C(1, 1) + .9, 'orbit', NAVY, 1, 1], [C(1, 2), 'orbit', NAVY, 1, 1], [C(1, 2) + .7, 'timeline', NAVY, 1, 1],
+  [S2, 'timeline', NAVY, 1, 1], [S2 + .3, 'timeline', GREEN, 1, 1], [S2 + 1.0, 'arc', GREEN, 1, 1],
+  [C(1, 4), 'arc', GREEN, 1, 1], [C(1, 4) + .35, 'arc', GREEN, 1, 0], [C(1, 4) + .36, 'fork', GREEN, 1, 0],
+  [C(1, 4) + .6, 'fork', GREEN, 1, 0], [C(1, 4) + 1.9, 'fork', GREEN, 1, 1],
+  [S3, 'fork', GREEN, 1, 1], [S3 + .3, 'fork', CREAM, 1, 1], [S3 + 1.0, 'ring3', CREAM, 1, 1],
+  [C(1, 6), 'ring3', CREAM, 1, 1], [C(1, 6) + .8, 'wave', CREAM, 1, 1],
+  [S4, 'wave', CREAM, 1, 1], [S4 + .3, 'wave', NAVY, 1, 1], [S4 + .9, 'ground4', NAVY, 1, 1],
+  [C(2, 1), 'ground4', NAVY, 1, 1], [C(2, 1) + .6, 'div4', NAVY, 1, 1],
+  [S5, 'div4', NAVY, 1, 1], [S5 + .3, 'div4', DIGITAL, 1, 1], [S5 + .9, 'div5', DIGITAL, 1, 1],
+  [S6, 'div5', DIGITAL, 1, 1], [S6 + .45, 'div5', DIGITAL, 1, 0], [S6 + .46, 'flow6', NAVY, 1, 0],
+  [C(2, 7) + .3, 'flow6', NAVY, 1, 0], [C(2, 7) + 1.0, 'flow6', NAVY, 1, .5],
+  [C(2, 8) + .2, 'flow6', NAVY, 1, .5], [C(2, 8) + .9, 'flow6', NAVY, 1, 1],
+  [S7, 'flow6', NAVY, 1, 1], [S7 + .8, 'ring7', NAVY, 1, 1], [C(3, 1), 'ring7', NAVY, 1, 1],
+  [C(3, 1) + .35, 'ring7', NAVY, 1, 0], [C(3, 1) + .36, 'branch', NAVY, 1, 0],
+  ...NODES.flatMap((n, k) => [[n.t - .5, 'branch', NAVY, 1, BR[k].back], [n.t, 'branch', NAVY, 1, BR[k].at]]),
+  [S8, 'branch', NAVY, 1, 1], [S8 + .45, 'branch', INK, 1, 0], [S8 + .46, 'snake', INK, 1, 0],
+  [C(3, 7) + .3, 'snake', INK, 1, 0], [C(3, 7) + 4.2, 'snake', INK, 1, 1],
+  [S9, 'snake', INK, 1, 1], [S9 + .3, 'snake', NAVY, 1, 1], [S9 + 1.1, 'ring9', NAVY, 1, 1],
+  [S10, 'ring9', NAVY, 1, 1], [S10 + .7, 'ul10', NAVY, 1, 1], [T, 'ul10', NAVY, 1, 1],
+];
+const shp = (name, t) => typeof SH[name] === 'function' ? SH[name](t) : SH[name];
+function lineState(t) {
+  let i = 0; while (i < K.length - 2 && K[i + 1][0] <= t) i++;
+  const [t0, s0, c0, o0, d0] = K[i], [t1, s1, c1, o1, d1] = K[i + 1];
+  const f = easeIO((t - t0) / ((t1 - t0) || 1)), a = shp(s0, t), b = shp(s1, t);
+  return { pts: a.map((p, k) => [lerp(p[0], b[k][0], f), lerp(p[1], b[k][1], f)]), color: f < .5 ? c0 : c1, op: lerp(o0, o1, f), d: lerp(d0, d1, f) };
+}
+const lineHead = t => { const st = lineState(t); return st.pts[Math.round(clamp(st.d) * (N - 1))]; };
+function drawLine(t) {
+  const st = lineState(t), el = document.getElementById('gline');
+  el.setAttribute('points', st.pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' '));
+  el.setAttribute('stroke', st.color);
+  el.setAttribute('opacity', st.op);
+  el.setAttribute('stroke-dashoffset', 1 - st.d);
+}
+
+// ---------- סצנות ----------
+// sc(התחלה, סוף, רקע|null, html, עדכון, {bgHtml, ox, oy, noReveal})
+// הרקע נחשף באליפסה שגדלה מ-(ox,oy) ונשאר עוד רגע אחרי הסוף (כדי שהסצנה הבאה תיחשף מעליו); התוכן נעלם ב-0.25 שנ׳ האחרונות.
+const S = [];
+const sc = (s, e, bg, html, upd, o = {}) => S.push({ s, e, bg, html: html(s), upd, o });
+// כותרת: שורה דקה + שורה מודגשת, מימין
+const hd = (s, e, l1, l2, color, { sub = '', id = '', top = 330, size = 92 } = {}) => sc(s, e, null, () => `
+  <div class="hd" ${id ? `id="${id}"` : ''} style="top:${top}px;color:${color}">
+    ${l1 ? `<div class="l h1" style="${A('rise', s + .05, .55)}">${l1}</div>` : ''}
+    ${l2 ? `<div class="s h2" style="font-size:${size}px;${A('rise', s + .17, .55)}"><span class="h2t">${l2}</span></div>` : ''}
+    ${sub ? `<div class="r hs" style="${A('rise', s + .4, .55)}">${sub}</div>` : ''}
+  </div>`);
+const Q_ = (bg, fg) => pill('?', 'f', `background:${bg};color:${fg}`);
+
+// 1 – מהי קופת גמל להשקעה? חיסכון גמיש למגוון מטרות, בטווח הקצר או הארוך
+const GOALS = [['house', 'var(--pink)', 30], ['heart', 'var(--mint)', 150], ['suitcase', 'var(--sky)', 210], ['sprout', 'var(--lime)', 330]];
+sc(S1, S2, 'var(--cream)', s => `
+  ${blob('var(--sky)', 560, 470, 190, 160)}
+  ${ic('piggy', 'var(--ink)', 560, 470, 230)}
+  <div class="mv" style="${OUT(C(1, 2), .35)}">${GOALS.map(([id, col, a], k) => {
+    const r = a * Math.PI / 180, x = 560 + 350 * Math.cos(r), y = 470 - 270 * Math.sin(r), at = C(1, 1) + 3.75 + k * .22;
+    return blob(col, x, y, 70, 60, A('pop', at, .45)) + ic(id, 'var(--ink)', x, y, 84, A('pop', at + .08, .45));
+  }).join('')}</div>
+  <div class="r" style="position:absolute;left:600px;width:400px;top:830px;text-align:center;font-size:46px;color:var(--navy);${A('pop', C(1, 2) + .5, .45)}">${pill('קצר')}</div>
+  <div class="r" style="position:absolute;left:120px;width:400px;top:830px;text-align:center;font-size:46px;color:var(--navy);${A('pop', C(1, 2) + .9, .45)}">${pill('ארוך')}</div>`,
+  null, { noReveal: true });
+hd(.3, C(1, 1), 'מהי', `קופת גמל להשקעה<span class="gap"></span>${Q_('var(--navy)', 'var(--cream)')}`, 'var(--navy)', { id: 'h0' });
+hd(C(1, 1), C(1, 2), 'חיסכון גמיש', 'למגוון מטרות', 'var(--navy)');
+hd(C(1, 2), S2, 'לטווח', 'הקצר או הארוך', 'var(--navy)');
+
+// 2 – הפקדה חד־פעמית או קבועה (מטבעות עוברים מהארנק לקופה), ומגוון מסלולים (הקו מתפצל)
+const ONE = C(1, 3) + 1.25, REG = C(1, 3) + 2.55; // "חד־פעמי" / "בהפקדות קבועות"
+sc(S2, S3, 'var(--mint60)', s => `
+  <div class="mv" style="${OUT(C(1, 4), .35)}">${blob('var(--green)', WAL[0], WAL[1], 120, 100, A('pop', s + .25, .45))}${ic('wallet', 'var(--ink)', WAL[0], WAL[1], 140, A('pop', s + .35, .45))}</div>
+  <div class="grp pg">${blob('var(--green)', 0, 0, 150, 125, A('pop', s + .35, .45))}${ic('piggy', 'var(--ink)', 0, 0, 190, A('pop', s + .45, .45))}</div>
+  ${PINS.map((p, k) => blob('var(--green)', p[0], p[1], 62, 54, A('pop', C(1, 4) + .75 + k * .42, .45)) + ic('location', 'var(--ink)', p[0], p[1], 66, A('pop', C(1, 4) + .83 + k * .42, .45))).join('')}
+  <div class="grp tok" data-t="${ONE}" data-d=".95">${ic('coins', 'var(--ink)', 0, 0, 96)}</div>
+  ${[0, 1, 2].map(k => `<div class="grp tok" data-t="${REG + k * .45}" data-d=".7">${ic('coins', 'var(--ink)', 0, 0, 60)}</div>`).join('')}`,
+  (t, el) => {
+    const u = easeIO((t - C(1, 4)) / .8);
+    el.querySelector('.pg').style.transform = `translate(${lerp(PIG2a[0], PIG2b[0], u)}px,${lerp(PIG2a[1], PIG2b[1], u)}px)`;
+    el.querySelectorAll('.tok').forEach(tk => { // מטבע שנוסע על הקשת
+      const f = (t - +tk.dataset.t) / +tk.dataset.d, p = SH.arc[Math.round(lerp(.12, .86, easeIO(f)) * (N - 1))];
+      tk.style.opacity = f > 0 && f < 1 ? Math.min(1, f * 6, (1 - f) * 6) : 0;
+      tk.style.transform = `translate(${p[0]}px,${p[1]}px)`;
+    });
+  }, { ox: 560, oy: 800 });
+hd(S2, C(1, 4), 'הפקדה', `${pill('חד־פעמית')}<span class="l" style="font-size:.8em"> או </span>${pill('קבועה')}`, 'var(--ink)', { size: 74 });
+hd(C(1, 4), S3, 'מגוון', 'מסלולי השקעה', 'var(--ink)');
+
+// 3 – והיתרון המשמעותי? הכסף נשאר נזיל (המנעול נפתח, הקו הופך לגל), בכפוף למס על הרווחים
+sc(S3, S4, 'var(--navy)', s => `
+  ${blob('var(--digital)', 560, 450, 200, 170, A('pop', s + .25, .5))}
+  <div class="mv" style="${OUT(C(1, 6), .2, 'popOut')}">${ic('lock', 'var(--cream)', 560, 450, 170, A('pop', s + .4, .45))}</div>
+  ${ic('lock-open', 'var(--cream)', 560, 450, 190, A('pop', C(1, 6) + .12, .5))}
+  ${ic('calculator', 'var(--sky)', 800, 290, 92, A('pop', C(1, 7) + .35, .45))}`,
+  null, { ox: 560, oy: 560 });
+hd(S3, C(1, 6), 'והיתרון', `המשמעותי<span class="gap"></span>${Q_('var(--digital)', 'var(--cream)')}`, 'var(--cream)');
+hd(C(1, 6), C(1, 7), 'הכסף נשאר', `${pill('נזיל')}<span class="gap"></span>${pill('בכל עת', 'f', 'background:var(--sky);color:var(--navy)')}`, 'var(--cream)');
+hd(C(1, 7), S4, 'בכפוף לתשלום', 'מס על הרווחים', 'var(--cream)');
+
+// 4 – למרות השמות הדומים / יש ביניהן הבדל חשוב (הקו הופך לקו מפריד)
+sc(S4, S5, 'var(--cream)', s => `
+  <div class="mv" style="${A('apartL', C(2, 1), .6)}">${blob('var(--sky)', 330, 470, 160, 135, A('pop', s + .25, .45))}${ic('piggy', 'var(--ink)', 330, 470, 190, A('pop', s + .35, .45))}</div>
+  <div class="mv" style="${A('apartR', C(2, 1), .6)}">${blob('var(--pink)', 790, 470, 160, 135, A('pop', s + .4, .45))}${ic('piggy', 'var(--ink)', 790, 470, 190, A('pop', s + .5, .45))}</div>`,
+  null, { ox: 560, oy: 770 });
+hd(S4, C(2, 1), 'למרות', 'השמות הדומים', 'var(--navy)');
+hd(C(2, 1), S5, 'יש ביניהן', 'הבדל חשוב', 'var(--navy)');
+
+// 5 – מסך מפוצל: ימין קופת גמל רגילה (כחול עמוק), שמאל קופת גמל להשקעה (תכלת). הקו הוא קו החיתוך
+const RC = 1440, LC = 480;
+sc(S5, S6, 'var(--sky)', s => `
+  <div class="lbl l" style="left:${RC - 260}px;top:100px;font-size:56px;color:var(--cream);${A('rise', s + .7, .5)}">קופת גמל</div>
+  <div class="lbl s" style="left:${RC - 260}px;top:166px;font-size:80px;color:var(--cream);${A('rise', s + .8, .5)}">רגילה</div>
+  ${blob('var(--digital)', RC, 480, 170, 145, A('pop', s + .9, .45))}${ic('piggy', 'var(--cream)', RC, 480, 190, A('pop', s + 1.0, .45))}
+  <div class="mv" style="transform-origin:1590px 590px;${A('shake', C(2, 3) + .25, .7, 'ease-in-out')}">${blob('var(--sky)', 1590, 600, 56, 48, A('pop', s + 1.3, .4))}${ic('lock', 'var(--navy)', 1590, 600, 60, A('pop', s + 1.35, .4))}</div>
+  <div class="lbl r" style="left:${RC - 260}px;top:690px;font-size:40px;color:var(--sky);${A('pop', C(2, 2) + 1.5, .45)}">${pill('בעיקר לחיסכון פנסיוני')}</div>
+  <div class="lbl r" style="left:${RC - 260}px;top:775px;font-size:40px;${A('pop', C(2, 3) + .9, .45)}">${pill('תנאים והגבלות', 'f', 'background:var(--pink);color:var(--ink)')}</div>
+
+  <div class="lbl l" style="left:${LC - 260}px;top:100px;font-size:56px;color:var(--navy);${A('rise', s + .95, .5)}">קופת גמל</div>
+  <div class="lbl s" style="left:${LC - 260}px;top:166px;font-size:80px;color:var(--navy);${A('rise', s + 1.05, .5)}">להשקעה</div>
+  ${blob('var(--lime)', LC, 480, 170, 145, A('pop', C(2, 4) + .05, .45))}${ic('piggy', 'var(--navy)', LC, 480, 190, A('pop', C(2, 4) + .15, .45))}
+  ${blob('var(--navy)', LC + 150, 600, 56, 48, A('pop', C(2, 5) + .5, .4))}${ic('lock-open', 'var(--sky)', LC + 150, 600, 64, A('pop', C(2, 5) + .55, .4))}
+  ${[0, 1, 2].map(k => ic('coins', 'var(--navy)', LC - 50 + k * 50, 400, 50, A('floatUp', C(2, 5) + 1.6 + k * .5, 1.1, 'ease-out'))).join('')}
+  <div class="lbl r" style="left:${LC - 260}px;top:690px;font-size:40px;${A('pop', C(2, 5) + 2.2, .45)}">${pill('משיכה בכל עת', 'f', 'background:var(--navy);color:var(--cream)')}</div>`,
+  null, { ox: 560, oy: 470, bgHtml: s => `<div class="half" style="left:960px;width:960px;background:var(--navy);${A('slideL', s + .2, .6, 'cubic-bezier(.65,0,.35,1)')}"></div>` });
+
+// 6 – בנוסף: העברה לקופה משלמת לקצבה, קצבה חודשית, פטור ממס (תרשים זרימה מימין לשמאל)
+sc(S6, S7, 'var(--cream)', s => `
+  ${blob('var(--sky)', FLOW[0][0], 470, 125, 105, A('pop', s + .3, .45))}${ic('piggy', 'var(--ink)', FLOW[0][0], 470, 160, A('pop', s + .4, .45))}
+  ${lbl('קופת גמל להשקעה', FLOW[0][0], 600, 'var(--ink)', A('rise', s + .6, .45))}
+  ${blob('var(--pink)', FLOW[1][0], 470, 125, 105, A('pop', C(2, 7) + .15, .45))}${ic('bank', 'var(--ink)', FLOW[1][0], 465, 130, A('pop', C(2, 7) + .25, .45))}
+  ${lbl('קופה משלמת לקצבה', FLOW[1][0], 600, 'var(--ink)', A('rise', C(2, 7) + .5, .45))}
+  ${blob('var(--mint)', FLOW[2][0], 470, 125, 105, A('pop', C(2, 8) + .1, .45))}${ic('hand-coins', 'var(--ink)', FLOW[2][0], 470, 140, A('pop', C(2, 8) + .2, .45))}
+  ${lbl('קצבה חודשית', FLOW[2][0], 600, 'var(--ink)', A('rise', C(2, 8) + .45, .45))}
+  ${ic('calendar-check', 'var(--navy)', FLOW[2][0] - 105, 360, 76, A('pop', C(2, 8) + .7, .45))}
+  ${ic('check-circle', 'var(--green)', FLOW[2][0] + 110, 360, 84, A('pop', C(2, 9) + .4, .5))}
+  <div class="grp tok" data-a="0" data-t="${C(2, 7) + .95}" data-d=".9">${ic('coins', 'var(--ink)', 0, 0, 62)}</div>
+  ${[0, 1, 2, 3].map(k => `<div class="grp tok" data-a="1" data-t="${C(2, 8) + 1.0 + k * .6}" data-d=".6">${ic('coins', 'var(--ink)', 0, 0, 52)}</div>`).join('')}`,
+  (t, el) => el.querySelectorAll('.tok').forEach(tk => {
+    const f = (t - +tk.dataset.t) / +tk.dataset.d, a = +tk.dataset.a, x = lerp(FLOW[a][0] - 70, FLOW[a + 1][0] + 70, easeIO(f));
+    tk.style.opacity = f > 0 && f < 1 ? Math.min(1, f * 5, (1 - f) * 5) : 0;
+    tk.style.transform = `translate(${x}px,470px)`;
+  }), { ox: 960, oy: 540 });
+hd(S6, C(2, 7), '', 'בנוסף', 'var(--navy)');
+hd(C(2, 7), C(2, 8), 'העברה לקופה', 'משלמת לקצבה', 'var(--navy)');
+hd(C(2, 8), C(2, 9), 'וקבלה', 'כקצבה חודשית', 'var(--navy)');
+hd(C(2, 9), S7, 'עשויות להעניק', 'פטור ממס', 'var(--navy)', { sub: 'בהתאם לתנאי החוק' });
+
+// 7 – איך בוחרים? הקו מתפצל מהשלט לשישה שיקולים
+sc(S7, S8, 'var(--sky)', s => `
+  ${blob('var(--cream)', ROOT[0], ROOT[1], 95, 80, A('pop', s + .4, .45))}${ic('signpost', 'var(--navy)', ROOT[0], ROOT[1] - 4, 112, A('pop', s + .5, .45))}
+  ${NODES.map((n, k) => `<div class="mv" style="transform-origin:${n.x}px ${n.y}px;${k === 5 ? A('pulse', C(3, 5) + .2, .6, 'ease-in-out') : ''}">
+    ${blob('var(--cream)', n.x, n.y, 70, 60, A('pop', n.t - .12, .45))}${ic(n.id, 'var(--navy)', n.x, n.y, 80, A('pop', n.t - .04, .45))}</div>
+    ${lbl(n.label, n.x, n.y - 108, 'var(--navy)', A('rise', n.t + .1, .4))}`).join('')}`,
+  null, { ox: ROOT[0], oy: ROOT[1] });
+hd(S7, C(3, 1), 'איך בוחרים', `קופה שמתאימה לכם<span class="gap"></span>${Q_('var(--navy)', 'var(--cream)')}`, 'var(--navy)');
+hd(C(3, 1), C(3, 2), 'קודם כול', 'מטרה וזמן', 'var(--navy)');
+hd(C(3, 2), C(3, 5), 'לאחר מכן', 'בוחנים את המסלול', 'var(--navy)');
+hd(C(3, 5), S8, 'תשואות עבר אינן מבטיחות', 'תשואה עתידית', 'var(--navy)');
+
+// 8 – וכדאי לדעת: מעבר בין מסלולים בלי אירוע מס (הקופה "נוסעת" על הקו ועוברת נתיב)
+sc(S8, S9, 'var(--mint60)', s => `
+  <div class="grp rider">${ic('piggy', 'var(--ink)', 0, -52, 116, A('pop', s + .5, .45))}</div>`,
+  (t, el) => { const p = lineState(t).d > .002 ? lineHead(t) : SH.snake[0]; el.querySelector('.rider').style.transform = `translate(${p[0]}px,${p[1]}px)`; },
+  { ox: 880, oy: 420, bgHtml: s => `<svg style="position:absolute;inset:0" viewBox="0 0 ${W} ${H}">${LANES.map((y, k) => `<line x1="140" x2="880" y1="${y}" y2="${y}" stroke="${GREEN}" stroke-width="7" stroke-linecap="round" stroke-dasharray="0.1 26" style="${A('in', s + .4 + k * .12, .4)}"/>`).join('')}</svg>` });
+hd(S8, C(3, 7), 'וכדאי', 'לדעת', 'var(--ink)');
+hd(C(3, 7), S9, 'מעבר בין מסלולים', pill('ללא אירוע מס', 'f', 'background:var(--green);color:var(--ink)'), 'var(--ink)');
+
+// 9 – מגוון מסלולים בכלל גמל לעתיד: השיקולים מתכנסים לקופה, והקו נסגר סביבה
+sc(S9, S10, 'var(--cream)', s => `
+  ${blob('var(--sky)', 560, 470, 210, 175, A('pop', s + .25, .5))}
+  ${ic('piggy', 'var(--ink)', 560, 470, 250, A('pop', s + .35, .5))}
+  ${NODES.map((n, k) => { const a = (30 + k * 60) * Math.PI / 180; return ic(n.id, 'var(--navy)', 560, 470, 84, `--dx:${Math.round(380 * Math.cos(a))}px;--dy:${Math.round(-300 * Math.sin(a))}px;${A('conv', s + .5 + k * .2, 1.3, 'cubic-bezier(.5,0,.75,0)')}`); }).join('')}
+  ${ic('check-circle', 'var(--green)', 745, 315, 100, A('pop', C(4, 1) + .5, .5))}`,
+  null, { ox: 560, oy: 470 });
+hd(S9, C(4, 1), 'מגוון מסלולי השקעה', 'בכלל גמל לעתיד', 'var(--navy)');
+hd(C(4, 1), S10, 'בחרו את המסלול', 'שמתאים לכם', 'var(--navy)');
+
+// 10 – סיום: שם המוצר, לוגו כלל ביטוח ופיננסים וגילוי נאות
+sc(S10, T, 'var(--cream)', s => `
+  <div id="endTitle" class="l" style="position:absolute;left:0;right:0;top:300px;text-align:center;font-size:104px;color:var(--navy);${A('rise', s + .15, .6)}"><span>כלל גמל לעתיד</span></div>
+  <div class="logo" style="position:absolute;left:${(W - 640) / 2}px;top:560px;width:640px;color:var(--ink);${A('in', s + .55, .6)}">${tpl('logoline')}</div>
+  <div class="r" style="position:absolute;left:260px;right:260px;top:900px;text-align:center;font-size:26px;line-height:1.5;color:var(--ink);${A('in', s + .9, .5)}">[מקום שמור לנוסח הגילוי הנאות המאושר]</div>`,
+  null, { ox: 960, oy: 470 });
+
+// ---------- בניית DOM ----------
+const stage = document.getElementById('stage'), bgL = document.getElementById('bgL');
+stage.insertAdjacentHTML('beforeend', `<svg id="lineLayer" viewBox="0 0 ${W} ${H}"><polyline id="gline" fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1"/></svg><div id="fgL"></div><div id="topL"><div id="cap" class="r"></div><div id="corner">${tpl('logoline')}</div></div>`);
+const fgL = document.getElementById('fgL');
+const REV = .8; // משך חשיפת הרקע
+S.forEach(o => {
+  if (o.bg) {
+    const b = document.createElement('div'); b.className = 'bg';
+    b.style.cssText = `background:${o.bg};--ox:${o.o.ox ?? 960}px;--oy:${o.o.oy ?? 540}px;${o.o.noReveal ? '' : A('reveal', o.s, REV, 'cubic-bezier(.65,0,.35,1)')}`;
+    b.innerHTML = o.o.bgHtml ? o.o.bgHtml(o.s) : ''; bgL.appendChild(b); o.bgEl = b;
+  }
+  const d = document.createElement('div'); d.className = 'sc'; d.innerHTML = o.html; fgL.appendChild(d); o.el = d;
+});
+
+// מדידות חד-פעמיות אחרי טעינת הפונטים: הקו הופך לקו תחתון מתחת לכותרת הראשונה ולשם המוצר
+let measured = false;
+function measure() {
+  const under = (sel, dy) => {
+    const el = document.querySelector(sel), host = el.closest('.sc'), anim = [...host.querySelectorAll('[style*="animation"]')];
+    const saved = anim.map(a => a.style.animation); anim.forEach(a => a.style.animation = 'none'); host.style.display = 'block';
+    const r = el.getBoundingClientRect(); host.style.display = 'none'; anim.forEach((a, i) => a.style.animation = saved[i]);
+    return seg([r.right, r.bottom + dy], [r.left, r.bottom + dy]);
+  };
+  SH.ul0 = under('#h0 .h2t', 24);
+  SH.ul10 = under('#endTitle span', 26);
+  measured = true;
+}
+
+// כתוביות: המשפט הפעיל, ממורכז; במסך המפוצל – מתחת לחצי שעליו מדברים
+const capEl = document.getElementById('cap'), cornerEl = document.getElementById('corner');
+const inNavy = t => (t >= S3 + .35 && t < S4 + .35) || (t >= S5 + .45 && t < S6 + .35);
+function captions(t) {
+  const cs = CUES.cues;
+  let k = -1;
+  for (let i = 0; i < cs.length; i++) if (t >= cs[i].start - .08) k = i;
+  const c = cs[k];
+  const until = c ? Math.min(c.end + .6, k + 1 < cs.length ? cs[k + 1].start - .08 : T) : 0;
+  const show = c && t < until && !(c.sec === 4 && c.i === 2); // בסיום הלוגו מדבר בעד עצמו
+  if (!show) { capEl.style.opacity = 0; return; }
+  if (capEl.dataset.k !== String(k)) { capEl.textContent = c.text; capEl.dataset.k = k; }
+  let cx = 960, w = 1500, col = inNavy(t) ? CREAM : INK;
+  if (c.sec === 2 && (c.i === 2 || c.i === 3)) { cx = 1440; w = 820; col = CREAM; }
+  if (c.sec === 2 && (c.i === 4 || c.i === 5)) { cx = 480; w = 820; col = NAVY; }
+  capEl.style.left = (cx - w / 2) + 'px'; capEl.style.width = w + 'px'; capEl.style.color = col;
+  capEl.style.opacity = Math.min(clamp((t - c.start + .08) / .15), clamp((until - t) / .15));
+}
+
+window.__setTime = t => {
+  if (!measured) measure();
+  S.forEach(o => {
+    const on = t >= o.s && t < o.e;
+    o.el.style.display = on ? 'block' : 'none';
+    o.el.style.opacity = on ? clamp((o.e - t) / .25) : 0;
+    if (o.bgEl) o.bgEl.style.display = (t >= o.s && t < o.e + REV + .1) ? 'block' : 'none';
+  });
+  document.getAnimations().forEach(a => { a.pause(); a.currentTime = t * 1000; });
+  S.forEach(o => { if (o.upd && t >= o.s && t < o.e) o.upd(t, o.el, o.s); });
+  drawLine(t);
+  captions(t);
+  cornerEl.style.color = inNavy(t) ? CREAM : INK;
+  cornerEl.style.opacity = clamp((S10 - t) / .3);
+};
+window.__duration = T;
+if (!navigator.webdriver) { const st = performance.now(); (function tick(){ __setTime(((performance.now() - st) / 1000) % T); requestAnimationFrame(tick); })(); }
+</script>
+</body>
+</html>

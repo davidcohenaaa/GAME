@@ -1,11 +1,17 @@
 # מזריק את קבצי ה-SVG של המותג לתוך עמוד המקור: כל <!--ASSET:name--> מוחלף בתוכן assets/name.svg
-# שימוש: python3 build.py <video.src.html> <video.html> [assets_dir] [--inline-fonts]
+# שימוש: python3 build.py <video.src.html> <video.html> [assets_dir] [--inline-fonts] [--cues cues.json]
+#   נכסים בתיקיות משנה: <!--ASSET:icons/wallet-->, <!--ASSET:icons/drawn/piggy-->
+#   --cues: מחליף את /*CUES*/null בעמוד בתוכן קובץ ה-JSON (תזמוני הקריינות מ-vo_cues.py)
 #   --inline-fonts: מטמיע גם את קבצי הפונט (brand-fonts/, fonts/) כ-data URI, כך שמתקבל קובץ HTML יחיד
 #   שמתנגן בכל דפדפן בלי תיקיות נלוות (לשימוש בסביבה בלי רינדור וידאו, למשל שיחה ב-claude.ai).
 import re, sys, base64, pathlib
 
-args = [a for a in sys.argv[1:] if not a.startswith('--')]
-inline_fonts = '--inline-fonts' in sys.argv
+argv = sys.argv[1:]
+cues_file = None
+if '--cues' in argv:
+    k = argv.index('--cues'); cues_file = argv[k + 1]; del argv[k:k + 2]
+args = [a for a in argv if not a.startswith('--')]
+inline_fonts = '--inline-fonts' in argv
 if len(args) < 2:
     sys.exit('usage: build.py <src.html> <out.html> [assets_dir] [--inline-fonts]')
 src, out = pathlib.Path(args[0]), pathlib.Path(args[1])
@@ -31,7 +37,9 @@ def inline_font(m):
     return f'url(data:{MIME.get(f.suffix, "application/octet-stream")};base64,{data})'
 
 
-html = re.sub(r'<!--ASSET:([\w-]+)-->', inline, src.read_text(encoding='utf-8'))
+html = re.sub(r'<!--ASSET:([\w/-]+)-->', inline, src.read_text(encoding='utf-8'))
+if cues_file:
+    html = html.replace('/*CUES*/null', pathlib.Path(cues_file).read_text(encoding='utf-8'))
 if inline_fonts:
     html = re.sub(r'url\(((?:brand-fonts|fonts)/[^)]+)\)', inline_font, html)
 out.write_text(html, encoding='utf-8')

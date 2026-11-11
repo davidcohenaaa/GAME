@@ -19,6 +19,20 @@
 - **נכס כללי:** מזריקים עם `<template id="mug"><!--ASSET:mug--></template>`, ואז `sil('mug', 'var(--digital)', x, y, width, extraCss)`.
 - **לוגו המוצר:** משתמשים ב-`behave(width, color, {...})`, שממקם את טקסט הבועית לפי `BV`/`BP`.
 
+## אייקוני קו (`assets/icons/`)
+60 אייקונים רשמיים מעמ׳ 53, קו "inky" ממולא ב-`currentColor`. מזריקים עם `<template id="wallet"><!--ASSET:icons/wallet--></template>` ומציבים עם `ic('wallet', color, cx, cy, size)`.
+
+| קבוצה | אייקונים |
+|---|---|
+| כסף ובנקאות | diamond, purse, wallet, hand-coins, deposit, bank, calculator, dollar, cent, card |
+| דיגיטל וסטטוס | paperclip, gear, calendar-check, lock, check-circle, chat-check, cursor, globe, signal, bluetooth |
+| חפצים | headphones, house, megaphone, scooter, truck, umbrella, umbrella-closed, key, gift, wrench |
+| מקומות ובית | pencil, location, lifebuoy, signpost, map, jar, rocket, lamp, armchair, home |
+| אוכל וספורט | apple, egg, carrot, muscle, pacifier, kettlebell, snorkel, rollerskate, pingpong, trophy |
+| טבע ושונות | moon, star, heart, cake, icecream, wine, flower, sprout, clover, leaf |
+
+**אייקונים שצוירו בסגנון הספר** (`assets/icons/drawn/`, לא מהספר, **לסמן לאישור מותג**): piggy (קופת חיסכון), lock-open, arrows-both, clock, magnifier, coins, suitcase, target. פורמט: `viewBox="8 8 84 84"`, קו `currentColor` בעובי 5.6 עם קצוות מעוגלים, כדי שעובי הקו יתאים לאייקונים הרשמיים.
+
 ## עוד סילואטות שקיימות בספר (לא חולצו)
 
 **עמ׳ 47 (גריד):**

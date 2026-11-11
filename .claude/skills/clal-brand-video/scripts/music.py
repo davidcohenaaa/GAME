@@ -1,5 +1,6 @@
 # מוזיקת רקע מקורית (סינתזה, בלי זכויות יוצרים), 120BPM – כל פעמה = 0.5 שנ׳, מסונכרן לחיתוכי הסצנות.
-# שימוש: python3 music.py <out.wav> <duration_sec> [end_sec]
+# שימוש: python3 music.py <out.wav> <duration_sec> [end_sec] [soft]
+#   soft: בלי קיק וקלאפ – רק פד, בס רך והיי-האט שקט (לסרטוני הסבר עם קריינות)
 #   end_sec: מאיזה רגע התופים נעצרים ונשאר רק אקורד סיום (ברירת מחדל: duration - 2.5, לרוב תחילת סצנת הלוגו)
 import sys, wave
 import numpy as np
@@ -7,6 +8,7 @@ if len(sys.argv) < 3:
     sys.exit('usage: music.py <out.wav> <duration_sec> [end_sec]')
 OUT, DUR = sys.argv[1], float(sys.argv[2])
 END = float(sys.argv[3]) if len(sys.argv) > 3 else max(0.0, DUR - 2.5)
+SOFT = len(sys.argv) > 4 and sys.argv[4] == 'soft'
 np.random.seed(7)
 SR, BPM = 44100, 120
 beat = 60 / BPM
@@ -38,9 +40,10 @@ for b in range(nb):
     at = b * beat
     end = at >= END  # סיום: רק פד
     if not end:
-        add(kick(), at, .9)
-        add(hat(), at + beat / 2, .35)
-        if b % 2 == 1: add(clap(), at, .25)
+        if not SOFT:
+            add(kick(), at, .9)
+            if b % 2 == 1: add(clap(), at, .25)
+        add(hat(), at + beat / 2, .12 if SOFT else .35)
         r = roots[(b // 8) % 4]
         add(tone(r, beat * .9), at, .22)
         add(tone(r * 2, beat * .4), at + beat / 2, .1)
@@ -56,4 +59,4 @@ out /= np.max(np.abs(out)) * 1.1
 pcm = (out * 32767).astype(np.int16)
 with wave.open(OUT, 'w') as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes())
-print(f'{OUT}: {DUR}s, drums until {END}s')
+print(f'{OUT}: {DUR}s, drums until {END}s{" (soft)" if SOFT else ""}')
